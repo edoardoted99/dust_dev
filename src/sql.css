@@ -1,0 +1,21 @@
+.sql-reserved {
+  color: #008000;
+  font-weight: bold;
+}
+
+.sql-simple-operator {
+  color: #008000;
+}
+
+.sql-field {
+  color: rgb(0, 85, 170);
+}
+
+.sql-operator {
+  color: rgb(170, 34, 255);
+  font-weight: bold;
+}
+
+.sql-constant {
+  color: rgb(186, 33, 33);
+}

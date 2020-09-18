@@ -1,0 +1,110 @@
+#example1 {
+    margin-left: 530px !important;
+}
+
+.myleft {
+    width: 500px;
+    height: 309px;
+    float: left;
+}
+
+.w500px {
+    width: 500px !important;
+}
+
+.h500px {
+    height: 500px !important;
+}
+
+.highlight{
+            opacity:    0.4;
+            filter:     alpha(opacity=40);
+            outline:    12px auto #0A7EbE;
+            background-color: white;
+        }
+
+@media screen and (max-width:1000px) {
+    #example1 {
+        margin-left: 330px !important;
+    }
+
+    .myleft {
+        width: 300px;
+        height: 186px;
+        float: left;
+    }
+
+    .w500px {
+        width: 300px !important;
+    }
+
+    .h500px {
+        height: 300px !important;
+    }
+}
+
+.clear {
+    clear: both;
+}
+
+.science-field-overlay {
+    outline: 1px solid #FFFFFF;
+    outline-offset: -1px;
+    background-color: transparent;
+    border: none;
+    cursor: default;
+    display: inline-block;  /* For IE11/ MS Edge bug */
+    pointer-events: none;
+}
+
+.rect-overlay {
+    outline: 1px solid #f00;
+}
+
+.ui.dropdown > .text > .image.colormap, .image.colormap {
+    height: 1em;
+    width: 100%;
+}
+
+.ui.loader.red:after {
+    border-color: red transparent transparent;
+}
+
+.ui.loader.orange:after {
+    border-color: orange transparent transparent;
+}
+
+span.simplecolorpicker.icon {
+    height: 1em;
+    width: 100% !important;
+    border: 0px;
+}
+
+@font-face {
+    font-family: 'icomoon';
+    src:  url('fonts/icomoon.eot?wazgva');
+    src:  url('fonts/icomoon.eot?wazgva#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?wazgva') format('truetype'),
+    url('fonts/icomoon.woff?wazgva') format('woff'),
+    url('fonts/icomoon.svg?wazgva#icomoon') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.icon-newspape2r-o {
+    font-family: 'icomoon' !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-newspape2r-o:before {
+    content: "\e900";
+}
