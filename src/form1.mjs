@@ -12,7 +12,7 @@ import { InputAngle } from './inputangle.mjs'
  * Parse an angle and returns an array of fields
  *
  * @param {string} value - The string representing the angle
- * @return {Array} The parsed fields
+ * @return {number[]} The parsed fields
  * 
  * The accepted format anything like these examples: 
  * –12° 34' 56".789  =>  [-12, -34, -56.789];
@@ -37,7 +37,7 @@ function parseAngle(value) {
 /**
  * Unparse an angle, that is returns a string from an array of numbers.
  *
- * @param {[number]} values - The array representing the various fields
+ * @param {number[]} values - The array representing the various fields
  * @param {String} type - The angle type: any of 'latitude', 'longitude', 
  *   or 'hms'
  * @return {String} The corresponding angle
@@ -57,33 +57,45 @@ function unparseAngle(values, type) {
   return res.join(' ');
 }
 
-
 export class MyForm1 extends React.Component {
   state = {
     objectName: '', coord: 'G', 
-    lon1: '', lon2: '', lonType: 0,
-    lat1: '', lat2: '', latType: 0,
+    lonCtr: '', lonWdt: '', lonMin: '', lonMax: '', lonType: 0,
+    latCtr: '', latWdt: '', latMin: '', latMax: '', latType: 0,
     errors: {}, undo: false
   };
 
   constructor(props) {
     super(props);
     this.handleChange = this.handleChange.bind(this);
+    this.handleLinkedChange = this.handleLinkedChange.bind(this);
     this.handleToggle = this.handleToggle.bind(this);
     this.handleSimbad = this.handleSimbad.bind(this);
     this.submit = this.submit.bind(this);
     this.clearOrUndo = this.clearOrUndo.bind(this);
   }
 
+  /**
+   * Convert center+width angles into min+max angles
+   *
+   * @param {String} ctr The central angle
+   * @param {String} wdt The width angle
+   * @param {String} type Either 'longitude', 'latitude', or 'hms'
+   * @return {String[]} An array with the minimum and maximum angles
+   * @memberof MyForm1
+   */
   cw2mm(ctr, wdt, type) {
     if (ctr === '' || wdt === '') return ['', ''];
+    // Extract the components and make sure both ctr and wdt have the same length
     let ctrP = parseAngle(ctr), wdtP = parseAngle(wdt), ctrV = 0.0, wdtV = 0.0, numFields = 0;
+    let mod = (type === 'hms') ? 24 : ((type === 'longitude') ? 360 : 90);
     for (let n = 0; n < 3; n++) {
+      if (ctrP[n] === undefined && wdtP[n] === undefined) break;
       ctrV *= 60;
       wdtV *= 60;
+      mod *= 60;
       if (ctrP[n]) ctrV += ctrP[n]
       if (wdtP[n]) wdtV += wdtP[n]
-      if (ctrP[n] === undefined && wdtP[n] === undefined) break;
       numFields += 1;
     }
     // Computes the minimum and maximum
@@ -91,26 +103,104 @@ export class MyForm1 extends React.Component {
     minV = ctrV - wdtV / 2;
     maxV = ctrV + wdtV / 2;
     if (type === 'latitude') {
-      if (minV < -90.0) minV = -90.0;
-      if (maxV > 90.0) maxV = 90.0;
-    } else if (type === 'longitude') {
-      minV = minV - Math.floor(minV / 360) * 360;
-      maxV = maxV - Math.floor(maxV / 360) * 360;
+      if (minV < -mod) minV = -mod;
+      if (maxV > mod) maxV = mod;
+    } else {
+      minV = minV - Math.floor(minV / mod) * mod;
+      maxV = maxV - Math.floor(maxV / mod) * mod;
     }
+    // Convert float values into arrays
     for (let n = 0; n < numFields; n++) {
-      let v = minP = 3;
-      minP = 2;
+      let v;
+      v = minV % 60;
+      minP.push(v);
+      minV = Math.trunc(minV / 60);
+      v = maxV % 60;
+      maxP.push(v);
+      maxV = Math.trunc(maxV / 60);
     }
+    // Convert the arrays into the result
+    return [unparseAngle(minP.reverse(), type), unparseAngle(maxP.reverse(), type)];
+  } 
+
+  /**
+   * Convert min+max angles into center+width angle
+   *
+   * @param {String} min The central angle
+   * @param {String} max The width angle
+   * @param {String} type Either 'longitude', 'latitude', or 'hms'
+   * @return {String[]} An array with the center and width
+   * @memberof MyForm1
+   */
+  mm2cw(min, max, type) {
+    if (min === '' || max === '') return ['', ''];
+    // Extract the components and make sure both min and max have the same length
+    let minP = parseAngle(min), maxP = parseAngle(max), minV = 0.0, maxV = 0.0, numFields = 0;
+    let mod = (type === 'hms') ? 24 : ((type === 'longitude') ? 360 : 90);
+    for (let n = 0; n < 3; n++) {
+      if (minP[n] === undefined && maxP[n] === undefined) break;
+      minV *= 60;
+      maxV *= 60;
+      mod *= 60;
+      if (minP[n]) minV += minP[n]
+      if (maxP[n]) maxV += maxP[n]
+      numFields += 1;
+    }
+    // Computes the minimum and maximum
+    let ctrV, wdtV, ctrP = [], wdtP = [];
+    if (minV < maxV) {
+      if (type === 'longitude') minV -= mod;
+      else if (type === 'hms') minV -= mod;
+      else [minV, maxV] = [maxV, minV];
+    }
+    ctrV = (minV + maxV) / 2;
+    wdtV = maxV - minV;
+    if (type === 'longitude') 
+      ctrV = ctrV - Math.floor(ctrV / mod) * mod;
+    else if (type === 'hms')
+      ctrV = ctrV - Math.floor(ctrV / mod) * mod;
+    // Convert float values into arrays
+    for (let n = 0; n < numFields; n++) {
+      let v;
+      v = ctrV % 60;
+      ctrP.push(v);
+      ctrV = Math.trunc(ctrV / 60);
+      v = wdtV % 60;
+      wdtP.push(v);
+      wdtV = Math.trunc(wdtV / 60);
+    }
+    // Convert the arrays into the result
+    return [unparseAngle(ctrP.reverse(), type), unparseAngle(wdtP.reverse(), type)];
   } 
 
   handleChange(e, { name, value }) {
-    const type = name.substr(0, 3), res = name.substr(3);
-    const fieldType = (res === 'Ctr' || res === 'Min') ? 1 : 2, isCorner = name[4] === 'M';
-    if (this.state[type + fieldNum] === '') {
-
-    }
     this.setStateValidate({ [name]: value });
     this.setState({ undo: false });
+  }
+
+  handleLinkedChange(e, { name, value }) {
+    const lonlat = name.substr(0, 3), rest = name.substr(3), isCorner = name[3] === 'M';
+    const type = (lonlat === 'lat') ? 'latitude' : ((this.state.coord === 'E') ? 'hms' : 'longitude');
+    if (isCorner) {
+      let [ctr, wdt] = this.mm2cw(
+        (rest === 'Min') ? value : this.state[lonlat + 'Min'],
+        (rest === 'Max') ? value : this.state[lonlat + 'Max'], type);
+      this.setState({
+        [lonlat + 'Type']: (isCorner ? 2 : 1),
+        [lonlat + 'Ctr']: ctr,
+        [lonlat + 'Wdt']: wdt
+      });
+    } else {
+      let [min, max] = this.cw2mm(
+        (rest === 'Ctr') ? value : this.state[lonlat + 'Ctr'],
+        (rest === 'Wdt') ? value : this.state[lonlat + 'Wdt'], type);
+      this.setState({
+        [lonlat + 'Type']: (isCorner ? 2 : 1),
+        [lonlat + 'Min']: min,
+        [lonlat + 'Max']: max
+      });
+    }
+    this.handleChange(e, { name, value });
   }
 
   handleToggle(e, { name, checked }) {
@@ -210,11 +300,6 @@ export class MyForm1 extends React.Component {
   render() {
     const lonName = (this.state.coord === 'G') ? 'galactic longitude' : 'right ascension';
     const latName = (this.state.coord === 'G') ? 'galactic latitude' : 'declination';
-    var lonCtr, lonWdt, lonMin, lonMax, latCtr, latWdt, latMin, latMax;
-    if (this.state.lonType == 1) {
-      [lonMin, lonMax] = this.cw2mm(lonCtr = this.state.lon1, lonWdt = this.state.lon2, 'longitude');
-
-    }
     return (<Form autoComplete='off'>
       <Header as='h2'>Area selection</Header>
       All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
@@ -238,30 +323,30 @@ export class MyForm1 extends React.Component {
       <Form.Group>
         <InputAngle label={'Center ' + lonName} width={8}
           type={this.state.coord != 'E' ? 'longitude' : 'hms'}
-          name='lonCtr' value={this.state.lonCtr} onChange={this.handleChange} />
+          name='lonCtr' value={this.state.lonCtr} onChange={this.handleLinkedChange} />
         <InputAngle label={'Center ' + latName} type='latitude' width={8} 
-          name='latCtr' value={this.state.latCtr} onChange={this.handleChange} />
+          name='latCtr' value={this.state.latCtr} onChange={this.handleLinkedChange} />
       </Form.Group>
       <Form.Group>
         <InputAngle label='Width' type='longitude' width={8}
-          name='lonWdt' value={this.state.lonWdt} onChange={this.handleChange} />
+          name='lonWdt' value={this.state.lonWdt} onChange={this.handleLinkedChange} />
         <InputAngle label='Height' type='longitude' width={8}
-          name='latWdt' value={this.state.latWdt} onChange={this.handleChange} />
+          name='latWdt' value={this.state.latWdt} onChange={this.handleLinkedChange} />
       </Form.Group>
       <Header as='h3' dividing>Rectangular selection: corners</Header>
       <Form.Group>
         <InputAngle label={'Minimum ' + lonName} width={8}
           type={this.state.coord != 'E' ? 'longitude' : 'hms'}
-          name='lonMin' value={this.state.lonMin} onChange={this.handleChange} />
+          name='lonMin' value={this.state.lonMin} onChange={this.handleLinkedChange} />
         <InputAngle label={'Minimum ' + latName} type='latitude' width={8}
-          name='latMin' value={this.state.latMin} onChange={this.handleChange} />
+          name='latMin' value={this.state.latMin} onChange={this.handleLinkedChange} />
       </Form.Group>
       <Form.Group>
         <InputAngle label={'Maximum ' + lonName} width={8}
           type={this.state.coord != 'E' ? 'longitude' : 'hms'}
-          name='lonMax' value={this.state.lonMax} onChange={this.handleChange} />
+          name='lonMax' value={this.state.lonMax} onChange={this.handleLinkedChange} />
         <InputAngle label={'Maximum ' + latName} type='latitude' width={8}
-          name='latMax' value={this.state.latMax} onChange={this.handleChange} />
+          name='latMax' value={this.state.latMax} onChange={this.handleLinkedChange} />
       </Form.Group>
     </Form>);
   }

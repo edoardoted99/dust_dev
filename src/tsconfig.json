@@ -2,6 +2,8 @@
   "moduleResolution": "node",
   "module": "system",
   "compilerOptions": {
-    "lib": ["es2017"]
+    "lib": [
+      "es2017"
+    ]
   }
 }

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 import React from 'react'
@@ -5,7 +6,7 @@ import React from 'react'
 import 'semantic-ui-css/semantic.min.css'
 import './sql.css'
 import { Form, Header, Button, Accordion } from 'semantic-ui-react'
-import { serversDict, datasetsDict, colorDict } from './datasets.js';
+import { serversDict, datasetsDict, colorDict } from './datasets.mjs';
 
 class SQLArea extends React.Component {
   state = { active: false }
@@ -95,7 +96,7 @@ export class MyForm0 extends React.Component {
       for (let key of Object.keys(validations)) {
         if (validations[key] !== undefined) {
           let state = validations[key](this.state[key]);
-          hasErrors |= !state;
+          hasErrors = hasErrors || (!state);
           if (!state) errors[key] = true;
         }
       }
@@ -199,7 +200,7 @@ export class MyForm0 extends React.Component {
       }
     }
     // Compute the ADQL string
-    let adql = '';
+    let adql;
     if (catalog && server) {
       let catalogQuery = datasetsDict[catalog].catalogs, adqlQuery;
       if (catalogQuery.constructor == Object) catalogQuery = catalogQuery[server];

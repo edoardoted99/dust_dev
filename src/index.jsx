@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 import React from 'react'
@@ -13,7 +14,7 @@ class MyApp extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      step: 0,
+      step: 1,
       wait: false,
     };
     this.setStep = this.setStep.bind(this);
@@ -58,7 +59,7 @@ function AppStepGroup(props) {
   
   for (var i in [0, 1, 2, 3]) {
     steps.push({
-      key: titles[i].replaceAll(" ", "-").toLowerCase(),
+      key: titles[i].replaceAll(' ', '-').toLowerCase(),
       icon: icons[i],
       title: titles[i],
       description: descriptions[i],
