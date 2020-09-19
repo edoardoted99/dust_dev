@@ -5,7 +5,7 @@ import React from 'react'
 
 import 'semantic-ui-css/semantic.min.css'
 import './sql.css'
-import { Form, Header, Button, Accordion } from 'semantic-ui-react'
+import { Container, Loader, Dimmer, Grid, Form, Header, Button, Accordion } from 'semantic-ui-react'
 import { serversDict, datasetsDict, colorDict } from './datasets.mjs';
 
 class SQLArea extends React.Component {
@@ -36,6 +36,7 @@ export class MyForm0 extends React.Component {
     this.handleChangeServer = this.handleChangeServer.bind(this);
     this.submit = this.submit.bind(this);
     this.clearOrUndo = this.clearOrUndo.bind(this);
+    this.fileUpload = this.fileUpload.bind(this);
   }
 
   handleChange(e, { name, value }) {
@@ -126,6 +127,10 @@ export class MyForm0 extends React.Component {
     } else {
       this.setState(this.state.undo);
     }
+  }
+
+  fileUpload(a, b) {
+    alert(a);
   }
 
   render() {
@@ -222,38 +227,55 @@ export class MyForm0 extends React.Component {
     }
     let undo = Boolean(this.state.undo);
 
-    return (<Form>
-      <Header as='h2'>Dataset query</Header>
-      <Header as='h3' dividing>Dataset selection</Header>
-      <Form.Group>
-        <Form.Select fluid width={10} name='catalog' value={catalog} label='Catalog'
-          options={catalogs} placeholder='Catalog' onChange={this.handleChangeCatalog}
-          error={this.state.errors.catalog && 'Please select a catalog'} />
-        <Form.Select fluid width={6} name='server' value={server} label='Server'
-          options={servers} placeholder='Server' onChange={this.handleChangeServer}
-          error={this.state.errors.server && 'Please select a server'} />
-      </Form.Group>
-      <Form.Group>
-        <Form.Dropdown fluid width={10} name='bandlist' value={bandlist} multiple search selection label='Bands'
-          options={bands} placeholder='Select bands' onChange={this.handleChange}
-          renderLabel={option => ({ color: option.color, content: option.text })}
-          error={this.state.errors.bandlist && 'Select at least two bands'} />
-        <Form.Dropdown fluid width={6} search selection clearable name='morphclass' value={morphclass}
-          label='Morphological classification' options={morphclasses} placeholder='No classification'
-          onChange={this.handleChange} />
-      </Form.Group>
-      <Header as='h3' dividing>Filters</Header>
-      <Form.Checkbox name='filter' checked={filter} label='Filter spurious sources'
-        onChange={this.handleToggle} />
-      <Form.Field>
-        <SQLArea content={adql} />
-      </Form.Field>
-      <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
-        onClick={this.submit} />
-      <Button style={{ width: "110px" }} icon={undo ? 'undo' : 'delete'} content={undo ? 'Undo' : 'Clear'}
-        color={undo ? 'green' : 'red'} onClick={this.clearOrUndo} />
-      <Button icon='upload' content='Upload configuration' />
-    </Form>);
+    return (
+      <Container>
+        <Dimmer.Dimmable blurring dimmed={Boolean(this.state.wait)}>
+          <Dimmer active={Boolean(this.state.wait)} inverted >
+            <Loader inverted indeterminate content={String(this.state.wait)} />
+          </Dimmer>
+          <Grid stackable columns={2}>
+            <Grid.Column style={{ flex: "1" }}>
+              <Form>
+                <Header as='h2'>Dataset query</Header>
+                <Header as='h3' dividing>Dataset selection</Header>
+                <Form.Group>
+                  <Form.Select fluid width={10} name='catalog' value={catalog} label='Catalog'
+                    options={catalogs} placeholder='Catalog' onChange={this.handleChangeCatalog}
+                    error={this.state.errors.catalog && 'Please select a catalog'} />
+                  <Form.Select fluid width={6} name='server' value={server} label='Server'
+                    options={servers} placeholder='Server' onChange={this.handleChangeServer}
+                    error={this.state.errors.server && 'Please select a server'} />
+                </Form.Group>
+                <Form.Group>
+                  <Form.Dropdown fluid width={10} name='bandlist' value={bandlist} multiple search selection label='Bands'
+                    options={bands} placeholder='Select bands' onChange={this.handleChange}
+                    renderLabel={option => ({ color: option.color, content: option.text })}
+                    error={this.state.errors.bandlist && 'Select at least two bands'} />
+                  <Form.Dropdown fluid width={6} search selection clearable name='morphclass' value={morphclass}
+                    label='Morphological classification' options={morphclasses} placeholder='No classification'
+                    onChange={this.handleChange} />
+                </Form.Group>
+                <Header as='h3' dividing>Filters</Header>
+                <Form.Checkbox name='filter' checked={filter} label='Filter spurious sources'
+                  onChange={this.handleToggle} />
+                <Form.Field>
+                  <SQLArea content={adql} />
+                </Form.Field>
+                <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
+                  onClick={this.submit} />
+                <Button style={{ width: "110px" }} icon={undo ? 'undo' : 'delete'} content={undo ? 'Undo' : 'Clear'}
+                  color={undo ? 'green' : 'red'} onClick={this.clearOrUndo} />
+                <Button as="label" htmlFor="file" type="button" icon='upload' content='Upload configuration' />
+                <input type="file" id="file" hidden onChange={this.fileUpload} />
+              </Form>      
+            </Grid.Column>
+            <Grid.Column style={{ flex: "0 0 300px" }}>
+              Right form
+            </Grid.Column>
+          </Grid>
+        </Dimmer.Dimmable>
+      </Container>
+    );
   }
 }
 

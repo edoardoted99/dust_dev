@@ -14,7 +14,7 @@ class MyApp extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      step: 1,
+      step: 0,
       wait: false,
     };
     this.setStep = this.setStep.bind(this);
@@ -25,24 +25,10 @@ class MyApp extends React.Component {
   render() {
     return (<div>
       <AppStepGroup step={this.state.step} setStep={this.setStep} />
-      <Container>
-        <Dimmer.Dimmable blurring dimmed={Boolean(this.state.wait)}>
-          <Dimmer active={Boolean(this.state.wait)} inverted >
-            <Loader inverted indeterminate content={String(this.state.wait)} />
-          </Dimmer>
-          <Grid stackable columns={2}>
-            <Grid.Column style={{ flex: "1" }}>
-              {this.state.step == 0 ?
-                <MyForm0 onSubmit={() => this.setState({ step: 1 })} />
-                :
-                <MyForm1 onSubmit={() => this.setState({ step: 2 })} />}
-            </Grid.Column>
-            <Grid.Column style={{ flex: "0 0 300px" }}>
-              Right form
-            </Grid.Column>
-          </Grid>
-        </Dimmer.Dimmable>
-      </Container>
+      {this.state.step == 0 ?
+        <MyForm0 onSubmit={() => this.setState({ step: 1 })} />
+        :
+        <MyForm1 onSubmit={() => this.setState({ step: 2 })} />}
     </div>);
   }
 }

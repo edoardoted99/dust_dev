@@ -4,8 +4,7 @@
 import React from 'react'
 
 import 'semantic-ui-css/semantic.min.css'
-import { Icon, Form, Header, Grid, Input, Button, GridColumn } from 'semantic-ui-react'
-import { serversDict, datasetsDict, colorDict } from './datasets.mjs';
+import { Container, Dimmer, Loader, Form, Header, Grid } from 'semantic-ui-react'
 import { InputAngle } from './inputangle.mjs'
 
 /**
@@ -300,7 +299,16 @@ export class MyForm1 extends React.Component {
   render() {
     const lonName = (this.state.coord === 'G') ? 'galactic longitude' : 'right ascension';
     const latName = (this.state.coord === 'G') ? 'galactic latitude' : 'declination';
-    return (<Form autoComplete='off'>
+    return (
+      <Container>
+        <Dimmer.Dimmable blurring dimmed={Boolean(this.state.wait)}>
+          <Dimmer active={Boolean(this.state.wait)} inverted >
+            <Loader inverted indeterminate content={String(this.state.wait)} />
+          </Dimmer>
+          <Grid stackable columns={2}>
+            <Grid.Column style={{ flex: "1" }}>
+      
+      <Form autoComplete='off'>
       <Header as='h2'>Area selection</Header>
       All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
       , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left 
@@ -315,11 +323,11 @@ export class MyForm1 extends React.Component {
           checked={this.state.coord === 'D'} onChange={this.handleChange} />
       </Form.Group>
       <Header as='h3' dividing>Rectangular selection: center and widths</Header>
-      <Form.Input label='Object name (Simbad resolved)' placeholder='object name'
-        width={16} icon={<Icon name='search' inverted circular link />}
+      <Form.Input label='Object name (Simbad resolved)' placeholder='object name' width={16}
         name='objectName' value={this.state.objectName} onChange={this.handleChange}
         onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && this.handleSimbad()}
-        onBlur={this.handleSimbad} error={this.state.errors.objectName} />
+        onBlur={this.handleSimbad} error={this.state.errors.objectName}
+        action='Search' />
       <Form.Group>
         <InputAngle label={'Center ' + lonName} width={8}
           type={this.state.coord != 'E' ? 'longitude' : 'hms'}
@@ -348,6 +356,14 @@ export class MyForm1 extends React.Component {
         <InputAngle label={'Maximum ' + latName} type='latitude' width={8}
           name='latMax' value={this.state.latMax} onChange={this.handleLinkedChange} />
       </Form.Group>
-    </Form>);
+              </Form>
+            </Grid.Column>
+            <Grid.Column style={{ flex: "0 0 300px" }}>
+              Right form
+            </Grid.Column>
+          </Grid>
+        </Dimmer.Dimmable>
+      </Container>
+    );
   }
 }
