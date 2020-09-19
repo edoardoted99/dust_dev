@@ -1,22 +1,27 @@
 // @ts-check
 
+import logoVizier from './logos/VizieR.png';
+import logoIRSA from './logos/IRSA.png';
+import logo2MASS from './logos/2MASS.png';
+import logoEmpty from './logos/empty.png';
+
 export const serversDict = {
   VizieR: {
     description: 'VizieR',
     TAP: 'http://TAPVizieR.u-strasbg.fr/TAPVizieR/tap/',
-    image: 'https://cds.u-strasbg.fr/img/vizier_small.png'
+    image: logoVizier
   },
   IRSA: {
     description: 'IRSA',
     TAP: 'https://irsa.ipac.caltech.edu/TAP',
-    image: 'https://irsa.ipac.caltech.edu/frontpage/irsa_logo_color_100.png'
+    image: logoIRSA
   }
 };
 
 export const datasetsDict = {
   '2MASS-PSC': {
     description: '2MASS-PSC: Two Micron All Sky Survey Point Source Catalog',
-    image: 'https://old.ipac.caltech.edu/2mass/etc/logos/2mass_sm_wh.gif',
+    image: logo2MASS,
     servers: ['VizieR', 'IRSA'],
     catalogs: {
       VizieR: 'II/246',
@@ -51,6 +56,7 @@ export const datasetsDict = {
   },
   'VISION': {
     description: 'VISION',
+    image: logoEmpty,
     servers: ['VizieR'],
     mask: 'VISION',
     catalogs: ['"J/A+A/587/A153/science"', '"J/A+A/587/A153/control"'],
