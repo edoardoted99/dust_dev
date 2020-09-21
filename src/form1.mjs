@@ -6,6 +6,7 @@ import React from 'react'
 import 'semantic-ui-css/semantic.min.css'
 import { Container, Dimmer, Loader, Form, Header, Grid } from 'semantic-ui-react'
 import { InputAngle } from './inputangle.mjs'
+import { galactic2equatorial, equatorial2galactic } from './coordinates.mjs'
 
 /**
  * Parse an angle and returns an array of fields
@@ -24,9 +25,9 @@ import { InputAngle } from './inputangle.mjs'
  * for the conversion and avoids mistakes for angles such as -0° 0' 12".
  */
 function parseAngle(value) {
-  let parsedValue = value.replace(/[°'"ʰᵐˢ]/g, '').replace('—', '-').split(' ').map(parseFloat);
+  let parsedValue = value.replace(/[°'"ʰᵐˢ]/g, '').replace(/[–—]/, '-').split(' ').map(parseFloat);
   // Fix negative values
-  if (value[0] == '–' || value[0] == '-') {
+  if (value[0] === '-' || value[0] === '–'|| value[0] === '—') {
     for (let i = 1; i < parsedValue.length; i++)
       parsedValue[i] = -parsedValue[i];
   }
@@ -36,24 +37,68 @@ function parseAngle(value) {
 /**
  * Unparse an angle, that is returns a string from an array of numbers.
  *
- * @param {number[]} values - The array representing the various fields
- * @param {String} type - The angle type: any of 'latitude', 'longitude', 
+ * @param {number[]} values The array representing the various fields
+ * @param {String} type The angle type: any of 'latitude', 'longitude', 
  *   or 'hms'
+ * @param {number} [basePrecision=7] The original precision, in decimal
+ *   places after the dot. The precision is increased by 1 for cordinates
+ *   of type 'hms', and is reduced by 2 for each field after the degrees 
+ *   or hours. Therefore, for example, arcseconds have by default 3
+ *   decimal digits after the dot.
  * @return {String} The corresponding angle
  * 
  * This is essentially the inverse of the function parseAngle 
  */
-function unparseAngle(values, type) {
-  var res = [], neg = false, markers = (type === 'hms') ? 'ʰᵐˢ' : '°\'"';
+function unparseAngle(values, type, basePrecision=7) {
+  var res = [], neg = false, markers
+  if (type === 'hms') {
+    markers = 'ʰᵐˢ'
+    basePrecision += 1
+  } else markers = '°\'"';
   for (let i = 0; i < values.length; i++) {
-    let v = Math.abs(values[i]), f = Math.floor(v), s = f + markers[i];
-    if (v != f) 
-      s += (v - f).toFixed(10).replace(/0*$/, '').substr(1);
+    let v = Math.abs(values[i]), s
+    s = v.toFixed(basePrecision - i * 2).replace(/0*$/, '').replace('.', markers[i] + '.').replace(/\.$/, '');
     neg = neg || (values[i] < 0);
     res.push(s);
   }
-  if (type === 'latitude') res[0] = (neg ? '—' : '+') + res[0];
+  if (type === 'latitude') res[0] = (neg ? '–' : '+') + res[0];
   return res.join(' ');
+}
+
+/**
+ * Convert a float number into an angle array format.
+ *
+ * @param {number} value The float number to convert
+ * @param {number} numFields The requested number of fields
+ * @return {number[]} The converted angle
+ * 
+ * This procedure assumes that the value passed is in units of the smallest
+ * field. So, for example, if numFields = 3, then the value is taken to be in 
+ * arcseconds. Note that negative numbers will result in angles with all 
+ * fields negative: this is intended.
+ */
+function decimal2angle(value, numFields) {
+  var result = [], d = value;
+  for (let n = 0; n < numFields-1; n++) {
+    result.push(d % 60);
+    d = Math.trunc(d / 60);
+  }
+  result.push(d);
+  return result.reverse();
+} 
+
+function scaleAngle(value, type, factor) {
+  let precision = 7;
+  if (factor < 0.3 && type !== 'hms') precision += 1;
+  if (value !== '') {
+    let angle = parseAngle(value), numFields = angle.length, decimal = 0;
+    for (let n = numFields - 1; n >= 0; n--) {
+      decimal += angle[n] * factor;
+      factor *= 60;
+    }
+    angle = decimal2angle(decimal, numFields);
+    return unparseAngle(angle, type, precision);
+  } else return '';
 }
 
 export class MyForm1 extends React.Component {
@@ -68,6 +113,7 @@ export class MyForm1 extends React.Component {
     super(props);
     this.handleChange = this.handleChange.bind(this);
     this.handleLinkedChange = this.handleLinkedChange.bind(this);
+    this.handleCoordChange = this.handleCoordChange.bind(this);
     this.handleToggle = this.handleToggle.bind(this);
     this.handleSimbad = this.handleSimbad.bind(this);
     this.submit = this.submit.bind(this);
@@ -97,6 +143,7 @@ export class MyForm1 extends React.Component {
       if (wdtP[n]) wdtV += wdtP[n]
       numFields += 1;
     }
+    mod /= 60;
     // Computes the minimum and maximum
     let minV, maxV, minP = [], maxP = [];
     minV = ctrV - wdtV / 2;
@@ -109,17 +156,10 @@ export class MyForm1 extends React.Component {
       maxV = maxV - Math.floor(maxV / mod) * mod;
     }
     // Convert float values into arrays
-    for (let n = 0; n < numFields; n++) {
-      let v;
-      v = minV % 60;
-      minP.push(v);
-      minV = Math.trunc(minV / 60);
-      v = maxV % 60;
-      maxP.push(v);
-      maxV = Math.trunc(maxV / 60);
-    }
+    minP = decimal2angle(minV, numFields);
+    maxP = decimal2angle(maxV, numFields);
     // Convert the arrays into the result
-    return [unparseAngle(minP.reverse(), type), unparseAngle(maxP.reverse(), type)];
+    return [unparseAngle(minP, type), unparseAngle(maxP, type)];
   } 
 
   /**
@@ -145,6 +185,7 @@ export class MyForm1 extends React.Component {
       if (maxP[n]) maxV += maxP[n]
       numFields += 1;
     }
+    mod /= 60;
     // Computes the minimum and maximum
     let ctrV, wdtV, ctrP = [], wdtP = [];
     if (minV < maxV) {
@@ -159,17 +200,10 @@ export class MyForm1 extends React.Component {
     else if (type === 'hms')
       ctrV = ctrV - Math.floor(ctrV / mod) * mod;
     // Convert float values into arrays
-    for (let n = 0; n < numFields; n++) {
-      let v;
-      v = ctrV % 60;
-      ctrP.push(v);
-      ctrV = Math.trunc(ctrV / 60);
-      v = wdtV % 60;
-      wdtP.push(v);
-      wdtV = Math.trunc(wdtV / 60);
-    }
+    ctrP = decimal2angle(ctrV, numFields);
+    wdtP = decimal2angle(wdtV, numFields);
     // Convert the arrays into the result
-    return [unparseAngle(ctrP.reverse(), type), unparseAngle(wdtP.reverse(), type)];
+    return [unparseAngle(ctrP, type), unparseAngle(wdtP, type)];
   } 
 
   handleChange(e, { name, value }) {
@@ -200,6 +234,61 @@ export class MyForm1 extends React.Component {
       });
     }
     this.handleChange(e, { name, value });
+  }
+
+  handleCoordChange(e, { name, value }) {
+    const frames = { 'G': 'g', 'E': 'e', 'D': 'e', '': '' };
+    let stateUpdate = { lonType: 0 };
+    if (frames[value] === frames[this.state.coord]) {
+      // Just a change of units: proceeds
+      let fields = ['lonCtr', 'lonWdt', 'lonMin', 'lonMax'];
+      for (let field of fields) 
+        stateUpdate[field] = scaleAngle(this.state[field], (value === 'D') ? 'longitude' : 'hms',
+          (value === 'D') ? 15 : (1.0 / 15.0));
+    } else {
+      if (this.state.lonCtr === '' || this.state.latCtr === '') {
+        // One field is missing: clear everything!
+        this.setState({ lonCtr: '', latCtr: '', lonMin: '', lonMax: '', latMin: '', latMax: '' });
+      } else {
+        // Parse the longitude and latitude
+        let lonA = parseAngle(this.state.lonCtr), latA = parseAngle(this.state.latCtr);
+        let lon, lat, numFields = Math.max(lonA.length, latA.length), factor = [1,60,3600][numFields-1];
+        lon = (lonA[0] || 0) + (lonA[1] || 0) / 60 + (lonA[2] || 0) / 3600;
+        lat = (latA[0] || 0) + (latA[1] || 0) / 60 + (latA[2] || 0) / 3600;
+        // If we start with hms, convert the longitude (RA) to degrees
+        if (this.state.coord === 'E') {
+          lon *= 15;
+          stateUpdate.lonWdt = scaleAngle(this.state.lonWdt, 'longitude', 15.0);
+        }
+        // Perform the coordinate transformation
+        if (value === 'G') [lon, lat] = equatorial2galactic(lon, lat);
+        else[lon, lat] = galactic2equatorial(lon, lat);
+        // If we end-up with hms, convert the longitude (RA) to hms
+        if (value === 'E') {
+          lon /= 15;
+          stateUpdate.lonWdt = scaleAngle(this.state.lonWdt, 'hms', 1.0/15.0);
+        }
+        // Update the state
+        stateUpdate.lonCtr = unparseAngle(decimal2angle(lon * factor, numFields), (value === 'E') ? 'hms' : 'longitude', 5);
+        stateUpdate.latCtr = unparseAngle(decimal2angle(lat * factor, numFields), 'latitude', 5);
+        // Check if we have already entered widths: if so, update the corner coordinates
+        if (this.state.lonWdt) {
+          let [min, max] = this.cw2mm(stateUpdate.lonCtr, stateUpdate.lonWdt || this.state.lonWdt,
+            (value === 'E') ? 'hms' : 'longitude');
+          stateUpdate.lonType = 1;
+          stateUpdate.lonMin = min;
+          stateUpdate.lonMax = max;
+        }
+        if (this.state.latWdt) {
+          let [min, max] = this.cw2mm(stateUpdate.latCtr, stateUpdate.latWdt || this.state.lonWdt, 'latitude');
+          stateUpdate.latType = 1;
+          stateUpdate.latMin = min;
+          stateUpdate.latMax = max;
+        }
+      }
+    }
+    this.handleChange(e, { name, value });
+    this.setState(stateUpdate);
   }
 
   handleToggle(e, { name, checked }) {
@@ -268,13 +357,13 @@ export class MyForm1 extends React.Component {
           m = data.match(/Coordinates\(GAL,.*\):\s* ([^ ]+)\s*([^ \n\r]+)/i);
           if (m) {
             m[1] = m[1].replace(/(\.|$)/, '°$1');
-            m[2] = m[2].replace('-', '—').replace(/(\.|$)/, '°$1');
+            m[2] = m[2].replace('-', '–').replace(/(\.|$)/, '°$1');
           }
         } else if (this.state.coord === 'D') {
           m = data.match(/Coordinates\(ICRS,.*\):\s* ([^ ]+)\s*([^ \n\r]+)\s*$/im);
           if (m) {
             m[1] = m[1].replace(/(\.|$)/, '°$1');
-            m[2] = m[2].replace('-', '—').replace(/(\.|$)/, '°$1');
+            m[2] = m[2].replace('-', '–').replace(/(\.|$)/, '°$1');
           }
         } else {
           m = data.match(/Coordinates\(ICRS,.*\):\s* ([^ ]+)\s*([^ ]+)\s*([^ ]+)\s*([^ ]+)\s*([^ ]+)\s*([^ \n\r]+)/i);
@@ -316,11 +405,11 @@ export class MyForm1 extends React.Component {
       <Header as='h3' dividing>Coordinate system</Header>
       <Form.Group inline>
         <Form.Radio label='Galatic' name='coord' value='G'
-          checked={this.state.coord === 'G'} onChange={this.handleChange} />
+          checked={this.state.coord === 'G'} onChange={this.handleCoordChange} />
         <Form.Radio label='Equatorial (hms)' name='coord' value='E'
-          checked={this.state.coord === 'E'} onChange={this.handleChange} />
+          checked={this.state.coord === 'E'} onChange={this.handleCoordChange} />
         <Form.Radio label='Equatorial (degrees)' name='coord' value='D'
-          checked={this.state.coord === 'D'} onChange={this.handleChange} />
+          checked={this.state.coord === 'D'} onChange={this.handleCoordChange} />
       </Form.Group>
       <Header as='h3' dividing>Rectangular selection: center and widths</Header>
       <Form.Input label='Object name (Simbad resolved)' placeholder='object name' width={16}
@@ -336,7 +425,8 @@ export class MyForm1 extends React.Component {
           name='latCtr' value={this.state.latCtr} onChange={this.handleLinkedChange} />
       </Form.Group>
       <Form.Group>
-        <InputAngle label='Width' type='longitude' width={8}
+        <InputAngle label='Width' width={8}
+          type={this.state.coord != 'E' ? 'longitude' : 'hms'}
           name='lonWdt' value={this.state.lonWdt} onChange={this.handleLinkedChange} />
         <InputAngle label='Height' type='longitude' width={8}
           name='latWdt' value={this.state.latWdt} onChange={this.handleLinkedChange} />

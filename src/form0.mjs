@@ -4,9 +4,9 @@
 import React from 'react'
 
 import 'semantic-ui-css/semantic.min.css'
-import './sql.css'
+import './css/sql.css'
 import { Container, Loader, Dimmer, Grid, Form, Header, Button, Accordion } from 'semantic-ui-react'
-import { serversDict, datasetsDict, colorDict } from './datasets.mjs';
+import { serversDict, datasetsDict, colorDict } from './datasets.mjs'
 
 class SQLArea extends React.Component {
   state = { active: false }
@@ -270,7 +270,7 @@ export class MyForm0 extends React.Component {
               </Form>      
             </Grid.Column>
             <Grid.Column style={{ flex: "0 0 300px" }}>
-              Right form
+              PUT SOMETHING HERE!
             </Grid.Column>
           </Grid>
         </Dimmer.Dimmable>

@@ -26,14 +26,14 @@ export class InputAngle extends React.Component {
   validate(value, partial = false) {
     if (partial) {
       if (this.props.type === 'latitude')
-        return Boolean(value.match(/^([-–+](\d{1,2}(°(|\.\d*| (\d{1,2}('(|\.\d*| (\d{1,2}("(|\.\d*))?)?))?)?))?)?)?$/));
+        return Boolean(value.match(/^([-–—+](\d{1,2}(°(|\.\d*| (\d{1,2}('(|\.\d*| (\d{1,2}("(|\.\d*))?)?))?)?))?)?)?$/));
       else if (this.props.type === 'hms')
         return Boolean(value.match(/^(\d{1,3}(ʰ(|\.\d*| (\d{1,2}(ᵐ(|\.\d*| (\d{1,2}(ˢ(|\.\d*))?)?))?)?))?)?$/));
       else
         return Boolean(value.match(/^(\d{1,3}(°(|\.\d*| (\d{1,2}('(|\.\d*| (\d{1,2}("(|\.\d*))?)?))?)?))?)?$/));
     } else {
       if (this.props.type === 'latitude')
-        return Boolean(value.match(/^([-–+]\d{1,2}°(|\.\d*| \d{1,2}'(|\.\d*| \d{1,2}"(|\.\d*))))$/));
+        return Boolean(value.match(/^([-–—+]\d{1,2}°(|\.\d*| \d{1,2}'(|\.\d*| \d{1,2}"(|\.\d*))))$/));
       else if (this.props.type === 'hms')
         return Boolean(value.match(/^(\d{1,3}ʰ(|\.\d*| \d{1,2}ᵐ(|\.\d*| \d{1,2}ˢ(|\.\d*))))$/));
       else
@@ -60,8 +60,8 @@ export class InputAngle extends React.Component {
     if (this.props.type === 'latitude') {
       if (value.length > 0) {
         if (value[0] >= '0' && value[0] <= '9') sign = '+';
-        else if (value[0] == '-' || value[0] == '–' || value[0] == '+') {
-          sign = (value[0] == '+') ? '+' : '–';
+        else if (value[0] === '-' || value[0] === '–' || value[0] === '—' || value[0] === '+') {
+          sign = (value[0] ==='+') ? '+' : '–';
           value = value.substr(1);
         }
       }
@@ -93,7 +93,8 @@ export class InputAngle extends React.Component {
       if (this.props.onChange) {
         let parsedValue = fixedValue.replace(/[°'"]/g, '').split(' ').map(parseFloat);
         // Fix negative values
-        if (this.props.type === 'latitude' && (fixedValue[0] == '–' || fixedValue[0] == '-')) {
+        if (this.props.type === 'latitude' &&
+          (fixedValue[0] === '-' || fixedValue[0] === '–' || fixedValue[0] === '—')) {
           for (let i = 1; i < parsedValue.length; i++)
             parsedValue[i] = -parsedValue[i];
         }
@@ -110,16 +111,6 @@ export class InputAngle extends React.Component {
       if (this.props.onChange) this.props.onChange(e, { ...this.props, value: fixedValue });
     }
     if (this.props.onBlur) this.props.onBlur(e);
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps.type !== this.props.type) {
-      let fixedValue = this.fixInput(this.state.value + ' ');
-      if (this.state.value != fixedValue) {
-        this.setState({ value: fixedValue });
-        if (this.props.onChange) this.props.onChange(null, { ...this.props, value: fixedValue });
-      }
-    }
   }
 
   render() {

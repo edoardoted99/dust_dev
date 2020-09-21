@@ -5,8 +5,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 
 import 'semantic-ui-css/semantic.min.css'
-import './sql.css'
-import { Step, Container, Dimmer, Loader, Grid } from 'semantic-ui-react'
+import { Step } from 'semantic-ui-react'
 import { MyForm0 } from './form0.mjs'
 import { MyForm1 } from './form1.mjs'
  
@@ -14,7 +13,7 @@ class MyApp extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      step: 0,
+      step: 1,
       wait: false,
     };
     this.setStep = this.setStep.bind(this);
