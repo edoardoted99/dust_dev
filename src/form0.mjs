@@ -9,8 +9,12 @@ import { Container, Loader, Dimmer, Grid, Form, Header, Button, Accordion } from
 import { serversDict, datasetsDict, colorDict } from './datasets.mjs'
 
 class SQLArea extends React.Component {
-  state = { active: false }
-  handleClick = () => (this.setState({ active: !this.state.active }))
+  state = {
+    active: false,
+  }
+
+  handleClick = () => (this.setState({ active: !this.state.active }));
+  
   render() {
     const active = this.state.active;
     return (
@@ -23,10 +27,6 @@ class SQLArea extends React.Component {
 }
 
 export class MyForm0 extends React.Component {
-  state = {
-    catalog: '', server: '', bandlist: [], morphclass: '', filter: true,
-    errors: {}, undo: false
-  };
 
   constructor(props) {
     super(props);
@@ -34,22 +34,22 @@ export class MyForm0 extends React.Component {
     this.handleToggle = this.handleToggle.bind(this);
     this.handleChangeCatalog = this.handleChangeCatalog.bind(this);
     this.handleChangeServer = this.handleChangeServer.bind(this);
-    this.submit = this.submit.bind(this);
+    this.handleNext = this.handleNext.bind(this);
     this.clearOrUndo = this.clearOrUndo.bind(this);
     this.fileUpload = this.fileUpload.bind(this);
   }
 
   handleChange(e, { name, value }) {
     this.setStateValidate({ [name]: value });
-    this.setState({ undo: false });
+    this.props.setState({ undo: false });
   }
 
   handleToggle(e, { name, checked }) {
-    this.setState({ [name]: checked, undo: false });
+    this.props.setState({ [name]: checked, undo: false });
   }
 
   handleChangeCatalog(e, { name, value }) {
-    let { server } = this.state;
+    let { server } = this.props.state;
     if (value) {
       let allowedServers = datasetsDict[value].servers;
       if (!allowedServers.includes(server)) {
@@ -58,19 +58,19 @@ export class MyForm0 extends React.Component {
       } else this.updateFields(value, server);
     }
     this.setStateValidate({ [name]: value });
-    this.setState({ undo: false });
+    this.props.setState({ undo: false });
   }
 
   handleChangeServer(e, { name, value }) {
-    let { catalog } = this.state;
+    let { catalog } = this.props.state;
     if (value && catalog) this.updateFields(catalog, value);
     this.setStateValidate({ [name]: value });
-    this.setState({ undo: false });
+    this.props.setState({ undo: false });
   }
 
   updateFields(catalog, server) {
     // Update the bands if necessary
-    let bandlist = this.state.bandlist, allowedBands = datasetsDict[catalog].bands;
+    let bandlist = this.props.state.bandlist, allowedBands = datasetsDict[catalog].bands;
     if (allowedBands.constructor === Object) allowedBands = allowedBands[server];
     allowedBands = allowedBands.map((b, _) => b[0]);
     if ((bandlist.length == 0) ||
@@ -83,7 +83,7 @@ export class MyForm0 extends React.Component {
     for (let [name, value] of Object.entries(dict)) {
       this.validate(name, value);
     }
-    return this.setState(dict);
+    return this.props.setState(dict);
   }
 
   validate(name, value) {
@@ -96,36 +96,36 @@ export class MyForm0 extends React.Component {
       let errors = {}, hasErrors = false;
       for (let key of Object.keys(validations)) {
         if (validations[key] !== undefined) {
-          let state = validations[key](this.state[key]);
+          let state = validations[key](this.props.state[key]);
           hasErrors = hasErrors || (!state);
           if (!state) errors[key] = true;
         }
       }
-      this.setState({ errors: errors });
+      this.props.setState({ errors: errors });
       return !hasErrors;
     } else if (validations[name] !== undefined) {
-      if (this.state.errors[name]) {
-        let state = validations[name](value), errors = this.state.errors;
+      if (this.props.state.errors[name]) {
+        let state = validations[name](value), errors = this.props.state.errors;
         errors[name] = !state;
-        this.setState({ errors: errors })
+        this.props.setState({ errors: errors })
         return state;
       }
     }
   }
 
-  submit(e) {
-    if (!this.validate()) e.preventDefault();
-    else this.props.onSubmit(e);
+  handleNext(e) {
+    e.preventDefault();
+    if (this.props.onNext && this.validate()) this.props.onNext(e, this.props.state);
   }
 
   clearOrUndo() {
-    if (!this.state.undo) {
-      this.setState({
+    if (!this.props.state.undo) {
+      this.props.setState({
         catalog: '', server: '', bandlist: [], morphclass: '', filter: true,
-        errors: {}, undo: Object.assign(this.state) 
+        errors: {}, undo: Object.assign(this.props.state) 
       });
     } else {
-      this.setState(this.state.undo);
+      this.props.setState(this.props.state.undo);
     }
   }
 
@@ -134,7 +134,7 @@ export class MyForm0 extends React.Component {
   }
 
   render() {
-    let { catalog, server, bandlist, morphclass, filter } = this.state;
+    let { catalog, server, bandlist, morphclass, filter } = this.props.state;
     // Set the catalog list
     const catalogs = Object.entries(datasetsDict).map(
       ([s, v], _) => ({ text: v.description, value: s, image: v.image })
@@ -225,13 +225,12 @@ export class MyForm0 extends React.Component {
           </> : <></>}
         </div>;
     }
-    let undo = Boolean(this.state.undo);
-
+    let undo = Boolean(this.props.state.undo);
     return (
       <Container>
-        <Dimmer.Dimmable blurring dimmed={Boolean(this.state.wait)}>
-          <Dimmer active={Boolean(this.state.wait)} inverted >
-            <Loader inverted indeterminate content={String(this.state.wait)} />
+        <Dimmer.Dimmable blurring dimmed={Boolean(this.props.state.wait)}>
+          <Dimmer active={Boolean(this.props.state.wait)} inverted >
+            <Loader inverted indeterminate content={String(this.props.state.wait)} />
           </Dimmer>
           <Grid stackable columns={2}>
             <Grid.Column style={{ flex: "1" }}>
@@ -241,16 +240,16 @@ export class MyForm0 extends React.Component {
                 <Form.Group>
                   <Form.Select fluid width={10} name='catalog' value={catalog} label='Catalog'
                     options={catalogs} placeholder='Catalog' onChange={this.handleChangeCatalog}
-                    error={this.state.errors.catalog && 'Please select a catalog'} />
+                    error={this.props.state.errors.catalog && 'Please select a catalog'} />
                   <Form.Select fluid width={6} name='server' value={server} label='Server'
                     options={servers} placeholder='Server' onChange={this.handleChangeServer}
-                    error={this.state.errors.server && 'Please select a server'} />
+                    error={this.props.state.errors.server && 'Please select a server'} />
                 </Form.Group>
                 <Form.Group>
                   <Form.Dropdown fluid width={10} name='bandlist' value={bandlist} multiple search selection label='Bands'
                     options={bands} placeholder='Select bands' onChange={this.handleChange}
                     renderLabel={option => ({ color: option.color, content: option.text })}
-                    error={this.state.errors.bandlist && 'Select at least two bands'} />
+                    error={this.props.state.errors.bandlist && 'Select at least two bands'} />
                   <Form.Dropdown fluid width={6} search selection clearable name='morphclass' value={morphclass}
                     label='Morphological classification' options={morphclasses} placeholder='No classification'
                     onChange={this.handleChange} />
@@ -261,12 +260,12 @@ export class MyForm0 extends React.Component {
                 <Form.Field>
                   <SQLArea content={adql} />
                 </Form.Field>
-                <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
-                  onClick={this.submit} />
+                <Button as="label" htmlFor="file" icon='upload' content='Upload configuration' />
+                <input type="file" id="file" hidden onChange={this.fileUpload} />
                 <Button style={{ width: "110px" }} icon={undo ? 'undo' : 'delete'} content={undo ? 'Undo' : 'Clear'}
                   color={undo ? 'green' : 'red'} onClick={this.clearOrUndo} />
-                <Button as="label" htmlFor="file" type="button" icon='upload' content='Upload configuration' />
-                <input type="file" id="file" hidden onChange={this.fileUpload} />
+                <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
+                  onClick={this.handleNext} />
               </Form>      
             </Grid.Column>
             <Grid.Column style={{ flex: "0 0 300px" }}>

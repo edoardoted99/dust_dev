@@ -9,25 +9,51 @@ import { Step } from 'semantic-ui-react'
 import { MyForm0 } from './form0.mjs'
 import { MyForm1 } from './form1.mjs'
  
-class MyApp extends React.Component {
+class MyApp extends React.Component {  
   constructor(props) {
     super(props);
     this.state = {
-      step: 1,
+      step: 0,
       wait: false,
+      states: [
+        {
+          catalog: '', server: '', bandlist: [], morphclass: '', filter: true,
+          errors: {}, undo: false
+        },
+        {
+          objectName: '', coord: 'G',
+          lonCtr: '', lonWdt: '', lonMin: '', lonMax: '', lonType: 0,
+          latCtr: '', latWdt: '', latMin: '', latMax: '', latType: 0,
+          errors: {}, undo: false
+        }],
     };
     this.setStep = this.setStep.bind(this);
+    this.setStates = this.setStates.bind(this)
   }
+
   setStep(step) {
     this.setState({ step: step });
   }
+
+  setStates(newState) {
+    this.setState(s => { s.states[s.step] = { ...s.states[s.step], ...newState }; return s; });
+  }
+
   render() {
+    let form;
+    switch (this.state.step) {
+      case 0:
+        form = (<MyForm0 state={this.state.states[0]} setState={this.setStates}
+          onNext={(e, s) => this.setState({ step: 1 })} />);
+        break;
+      case 1:
+        form = (<MyForm1 state={this.state.states[1]} setState={this.setStates}
+          onNext={() => this.setState({ step: 2 })} onBack={() => this.setState({ step: 0 })} />);
+        break;
+    }
     return (<div>
       <AppStepGroup step={this.state.step} setStep={this.setStep} />
-      {this.state.step == 0 ?
-        <MyForm0 onSubmit={() => this.setState({ step: 1 })} />
-        :
-        <MyForm1 onSubmit={() => this.setState({ step: 2 })} />}
+      {form}
     </div>);
   }
 }
@@ -42,7 +68,7 @@ function AppStepGroup(props) {
     'Select the location of the control field', 'Set the final parameters'];
   var setStep = (s) => () => props.setStep(s)
   
-  for (var i in [0, 1, 2, 3]) {
+  for (let i of [0, 1, 2, 3]) {
     steps.push({
       key: titles[i].replaceAll(' ', '-').toLowerCase(),
       icon: icons[i],

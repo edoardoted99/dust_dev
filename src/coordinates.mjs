@@ -2,6 +2,10 @@
 'use strict';
 
 
+/* Formulae are taken from
+ * https://www.aanda.org/articles/aa/full_html/2011/02/aa14961-10/aa14961-10.html
+ */
+
 /**
  * Perform a spherical coordinate transformation.
  *

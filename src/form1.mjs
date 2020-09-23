@@ -4,7 +4,7 @@
 import React from 'react'
 
 import 'semantic-ui-css/semantic.min.css'
-import { Container, Dimmer, Loader, Form, Header, Grid } from 'semantic-ui-react'
+import { Container, Dimmer, Loader, Form, Header, Grid, Button } from 'semantic-ui-react'
 import { InputAngle } from './inputangle.mjs'
 import { galactic2equatorial, equatorial2galactic } from './coordinates.mjs'
 
@@ -102,13 +102,6 @@ function scaleAngle(value, type, factor) {
 }
 
 export class MyForm1 extends React.Component {
-  state = {
-    objectName: '', coord: 'G', 
-    lonCtr: '', lonWdt: '', lonMin: '', lonMax: '', lonType: 0,
-    latCtr: '', latWdt: '', latMin: '', latMax: '', latType: 0,
-    errors: {}, undo: false
-  };
-
   constructor(props) {
     super(props);
     this.handleChange = this.handleChange.bind(this);
@@ -116,7 +109,8 @@ export class MyForm1 extends React.Component {
     this.handleCoordChange = this.handleCoordChange.bind(this);
     this.handleToggle = this.handleToggle.bind(this);
     this.handleSimbad = this.handleSimbad.bind(this);
-    this.submit = this.submit.bind(this);
+    this.handleNext = this.handleNext.bind(this);
+    this.handleBack = this.handleBack.bind(this);
     this.clearOrUndo = this.clearOrUndo.bind(this);
   }
 
@@ -208,26 +202,26 @@ export class MyForm1 extends React.Component {
 
   handleChange(e, { name, value }) {
     this.setStateValidate({ [name]: value });
-    this.setState({ undo: false });
+    this.props.setState({ undo: false });
   }
 
   handleLinkedChange(e, { name, value }) {
     const lonlat = name.substr(0, 3), rest = name.substr(3), isCorner = name[3] === 'M';
-    const type = (lonlat === 'lat') ? 'latitude' : ((this.state.coord === 'E') ? 'hms' : 'longitude');
+    const type = (lonlat === 'lat') ? 'latitude' : ((this.props.state.coord === 'E') ? 'hms' : 'longitude');
     if (isCorner) {
       let [ctr, wdt] = this.mm2cw(
-        (rest === 'Min') ? value : this.state[lonlat + 'Min'],
-        (rest === 'Max') ? value : this.state[lonlat + 'Max'], type);
-      this.setState({
+        (rest === 'Min') ? value : this.props.state[lonlat + 'Min'],
+        (rest === 'Max') ? value : this.props.state[lonlat + 'Max'], type);
+      this.props.setState({
         [lonlat + 'Type']: (isCorner ? 2 : 1),
         [lonlat + 'Ctr']: ctr,
         [lonlat + 'Wdt']: wdt
       });
     } else {
       let [min, max] = this.cw2mm(
-        (rest === 'Ctr') ? value : this.state[lonlat + 'Ctr'],
-        (rest === 'Wdt') ? value : this.state[lonlat + 'Wdt'], type);
-      this.setState({
+        (rest === 'Ctr') ? value : this.props.state[lonlat + 'Ctr'],
+        (rest === 'Wdt') ? value : this.props.state[lonlat + 'Wdt'], type);
+      this.props.setState({
         [lonlat + 'Type']: (isCorner ? 2 : 1),
         [lonlat + 'Min']: min,
         [lonlat + 'Max']: max
@@ -239,26 +233,26 @@ export class MyForm1 extends React.Component {
   handleCoordChange(e, { name, value }) {
     const frames = { 'G': 'g', 'E': 'e', 'D': 'e', '': '' };
     let stateUpdate = { lonType: 0 };
-    if (frames[value] === frames[this.state.coord]) {
+    if (frames[value] === frames[this.props.state.coord]) {
       // Just a change of units: proceeds
       let fields = ['lonCtr', 'lonWdt', 'lonMin', 'lonMax'];
       for (let field of fields) 
-        stateUpdate[field] = scaleAngle(this.state[field], (value === 'D') ? 'longitude' : 'hms',
+        stateUpdate[field] = scaleAngle(this.props.state[field], (value === 'D') ? 'longitude' : 'hms',
           (value === 'D') ? 15 : (1.0 / 15.0));
     } else {
-      if (this.state.lonCtr === '' || this.state.latCtr === '') {
+      if (this.props.state.lonCtr === '' || this.props.state.latCtr === '') {
         // One field is missing: clear everything!
-        this.setState({ lonCtr: '', latCtr: '', lonMin: '', lonMax: '', latMin: '', latMax: '' });
+        this.props.setState({ lonCtr: '', latCtr: '', lonMin: '', lonMax: '', latMin: '', latMax: '' });
       } else {
         // Parse the longitude and latitude
-        let lonA = parseAngle(this.state.lonCtr), latA = parseAngle(this.state.latCtr);
+        let lonA = parseAngle(this.props.state.lonCtr), latA = parseAngle(this.props.state.latCtr);
         let lon, lat, numFields = Math.max(lonA.length, latA.length), factor = [1,60,3600][numFields-1];
         lon = (lonA[0] || 0) + (lonA[1] || 0) / 60 + (lonA[2] || 0) / 3600;
         lat = (latA[0] || 0) + (latA[1] || 0) / 60 + (latA[2] || 0) / 3600;
         // If we start with hms, convert the longitude (RA) to degrees
-        if (this.state.coord === 'E') {
+        if (this.props.state.coord === 'E') {
           lon *= 15;
-          stateUpdate.lonWdt = scaleAngle(this.state.lonWdt, 'longitude', 15.0);
+          stateUpdate.lonWdt = scaleAngle(this.props.state.lonWdt, 'longitude', 15.0);
         }
         // Perform the coordinate transformation
         if (value === 'G') [lon, lat] = equatorial2galactic(lon, lat);
@@ -266,21 +260,21 @@ export class MyForm1 extends React.Component {
         // If we end-up with hms, convert the longitude (RA) to hms
         if (value === 'E') {
           lon /= 15;
-          stateUpdate.lonWdt = scaleAngle(this.state.lonWdt, 'hms', 1.0/15.0);
+          stateUpdate.lonWdt = scaleAngle(this.props.state.lonWdt, 'hms', 1.0/15.0);
         }
         // Update the state
         stateUpdate.lonCtr = unparseAngle(decimal2angle(lon * factor, numFields), (value === 'E') ? 'hms' : 'longitude', 5);
         stateUpdate.latCtr = unparseAngle(decimal2angle(lat * factor, numFields), 'latitude', 5);
         // Check if we have already entered widths: if so, update the corner coordinates
-        if (this.state.lonWdt) {
-          let [min, max] = this.cw2mm(stateUpdate.lonCtr, stateUpdate.lonWdt || this.state.lonWdt,
+        if (this.props.state.lonWdt) {
+          let [min, max] = this.cw2mm(stateUpdate.lonCtr, stateUpdate.lonWdt || this.props.state.lonWdt,
             (value === 'E') ? 'hms' : 'longitude');
           stateUpdate.lonType = 1;
           stateUpdate.lonMin = min;
           stateUpdate.lonMax = max;
         }
-        if (this.state.latWdt) {
-          let [min, max] = this.cw2mm(stateUpdate.latCtr, stateUpdate.latWdt || this.state.lonWdt, 'latitude');
+        if (this.props.state.latWdt) {
+          let [min, max] = this.cw2mm(stateUpdate.latCtr, stateUpdate.latWdt || this.props.state.lonWdt, 'latitude');
           stateUpdate.latType = 1;
           stateUpdate.latMin = min;
           stateUpdate.latMax = max;
@@ -288,16 +282,16 @@ export class MyForm1 extends React.Component {
       }
     }
     this.handleChange(e, { name, value });
-    this.setState(stateUpdate);
+    this.props.setState(stateUpdate);
   }
 
   handleToggle(e, { name, checked }) {
-    this.setState({ [name]: checked, undo: false });
+    this.props.setState({ [name]: checked, undo: false });
   }
 
   setStateValidate(dict) {
     for (let name in dict) this.validate(name, dict[name]);
-    return this.setState(dict);
+    return this.props.setState(dict);
   }
 
   validate(name, value) {
@@ -308,58 +302,63 @@ export class MyForm1 extends React.Component {
       let errors = {}, hasErrors = false;
       for (let key of Object.keys(validations)) {
         if (validations[key] !== undefined) {
-          let state = validations[key](this.state[key]);
+          let state = validations[key](this.props.state[key]);
           hasErrors = hasErrors || (!state);
           if (!state) errors[key] = true;
         }
       }
-      this.setState({ errors: errors });
+      this.props.setState({ errors: errors });
       return hasErrors;
     } else if (validations[name] !== undefined) {
-      if (this.state.errors[name]) {
-        let state = validations[name](value), errors = this.state.errors;
+      if (this.props.state.errors[name]) {
+        let state = validations[name](value), errors = this.props.state.errors;
         errors[name] = !state;
-        this.setState({ errors: errors })
+        this.props.setState({ errors: errors })
         return !state;
       }
     }
   }
 
-  submit(e) {
-    if (!this.validate()) e.preventDefault();
-    else this.props.onSubmit(e);
+  handleNext(e) {
+    e.preventDefault();
+    if (this.props.onNext && this.validate()) this.props.onNext(e);
+  }
+
+  handleBack(e) {
+    e.preventDefault();
+    if (this.props.onBack) this.props.onBack(e);
   }
 
   clearOrUndo() {
-    if (!this.state.undo) {
-      this.setState({
+    if (!this.props.state.undo) {
+      this.props.setState({
         objectName: '', coord: 'G', lonCtr: '', latCtr: '', lonWdt: '', latWdt: '',
-        lonMin: '', latMin: '', lonMax: '', latMax: '', errors: {}, undo: Object.assign(this.state)
+        lonMin: '', latMin: '', lonMax: '', latMax: '', errors: {}, undo: Object.assign(this.props.state)
       });
     } else {
-      this.setState(this.state.undo);
+      this.props.setState(this.props.state.undo);
     }
   }
 
   handleSimbad() {
-    if (this.state.objectName.match(/^\s*$/)) return;
+    if (this.props.state.objectName.match(/^\s*$/)) return;
     let xhr = new XMLHttpRequest();
     const url = 'http://simbad.u-strasbg.fr/simbad/sim-id?output.format=ASCII&' +
       'obj.coo1=on&frame1=ICRS&epoch1=J2000&equi1=2000&coodisp1=s2&' +
       'obj.coo2=on&frame2=ICRS&epoch2=J2000&equi2=2000&coodisp2=d2&' +
       'obj.coo3=on&frame3=GAL&epoch3=J2000&equi3=2000&coodisp3=d2&' +
-      'obj.coo4=off&obj.bibsel=off&Ident=' + escape(this.state.objectName);
+      'obj.coo4=off&obj.bibsel=off&Ident=' + escape(this.props.state.objectName);
     xhr.open('GET', url);
     xhr.onload = () => {
       if (xhr.status === 200) {
         let data = xhr.responseText, m;
-        if (this.state.coord === 'G') {
+        if (this.props.state.coord === 'G') {
           m = data.match(/Coordinates\(GAL,.*\):\s* ([^ ]+)\s*([^ \n\r]+)/i);
           if (m) {
             m[1] = m[1].replace(/(\.|$)/, '°$1');
             m[2] = m[2].replace('-', '–').replace(/(\.|$)/, '°$1');
           }
-        } else if (this.state.coord === 'D') {
+        } else if (this.props.state.coord === 'D') {
           m = data.match(/Coordinates\(ICRS,.*\):\s* ([^ ]+)\s*([^ \n\r]+)\s*$/im);
           if (m) {
             m[1] = m[1].replace(/(\.|$)/, '°$1');
@@ -373,79 +372,85 @@ export class MyForm1 extends React.Component {
           }
         }
         if (m) {
-          this.setState({ lonCtr: m[1], latCtr: m[2] });
+          this.props.setState({ lonCtr: m[1], latCtr: m[2] });
         } else {
-          this.setState({ errors: { objectName: 'Simbad could not resolve this object name' }})
+          this.props.setState({ errors: { objectName: 'Simbad could not resolve this object name' }})
         }
       } else {
-        this.setState({ errors: { objectName: 'Connection error to Simbad' } })
+        this.props.setState({ errors: { objectName: 'Connection error to Simbad' } })
       }
     };
-    xhr.onerror = () => this.setState({ errors: { objectName: 'Connection error to Simbad' } });
+    xhr.onerror = () => this.props.setState({ errors: { objectName: 'Connection error to Simbad' } });
     xhr.send();
   }
 
   render() {
-    const lonName = (this.state.coord === 'G') ? 'galactic longitude' : 'right ascension';
-    const latName = (this.state.coord === 'G') ? 'galactic latitude' : 'declination';
+    const lonName = (this.props.state.coord === 'G') ? 'galactic longitude' : 'right ascension';
+    const latName = (this.props.state.coord === 'G') ? 'galactic latitude' : 'declination';
+    let undo = Boolean(this.props.state.undo);
     return (
       <Container>
-        <Dimmer.Dimmable blurring dimmed={Boolean(this.state.wait)}>
-          <Dimmer active={Boolean(this.state.wait)} inverted >
-            <Loader inverted indeterminate content={String(this.state.wait)} />
+        <Dimmer.Dimmable blurring dimmed={Boolean(this.props.state.wait)}>
+          <Dimmer active={Boolean(this.props.state.wait)} inverted >
+            <Loader inverted indeterminate content={String(this.props.state.wait)} />
           </Dimmer>
           <Grid stackable columns={2}>
             <Grid.Column style={{ flex: "1" }}>
-      
-      <Form autoComplete='off'>
-      <Header as='h2'>Area selection</Header>
-      All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
-      , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left 
-      using the selection button (the square).
-      <Header as='h3' dividing>Coordinate system</Header>
-      <Form.Group inline>
-        <Form.Radio label='Galatic' name='coord' value='G'
-          checked={this.state.coord === 'G'} onChange={this.handleCoordChange} />
-        <Form.Radio label='Equatorial (hms)' name='coord' value='E'
-          checked={this.state.coord === 'E'} onChange={this.handleCoordChange} />
-        <Form.Radio label='Equatorial (degrees)' name='coord' value='D'
-          checked={this.state.coord === 'D'} onChange={this.handleCoordChange} />
-      </Form.Group>
-      <Header as='h3' dividing>Rectangular selection: center and widths</Header>
-      <Form.Input label='Object name (Simbad resolved)' placeholder='object name' width={16}
-        name='objectName' value={this.state.objectName} onChange={this.handleChange}
-        onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && this.handleSimbad()}
-        onBlur={this.handleSimbad} error={this.state.errors.objectName}
-        action='Search' />
-      <Form.Group>
-        <InputAngle label={'Center ' + lonName} width={8}
-          type={this.state.coord != 'E' ? 'longitude' : 'hms'}
-          name='lonCtr' value={this.state.lonCtr} onChange={this.handleLinkedChange} />
-        <InputAngle label={'Center ' + latName} type='latitude' width={8} 
-          name='latCtr' value={this.state.latCtr} onChange={this.handleLinkedChange} />
-      </Form.Group>
-      <Form.Group>
-        <InputAngle label='Width' width={8}
-          type={this.state.coord != 'E' ? 'longitude' : 'hms'}
-          name='lonWdt' value={this.state.lonWdt} onChange={this.handleLinkedChange} />
-        <InputAngle label='Height' type='longitude' width={8}
-          name='latWdt' value={this.state.latWdt} onChange={this.handleLinkedChange} />
-      </Form.Group>
-      <Header as='h3' dividing>Rectangular selection: corners</Header>
-      <Form.Group>
-        <InputAngle label={'Minimum ' + lonName} width={8}
-          type={this.state.coord != 'E' ? 'longitude' : 'hms'}
-          name='lonMin' value={this.state.lonMin} onChange={this.handleLinkedChange} />
-        <InputAngle label={'Minimum ' + latName} type='latitude' width={8}
-          name='latMin' value={this.state.latMin} onChange={this.handleLinkedChange} />
-      </Form.Group>
-      <Form.Group>
-        <InputAngle label={'Maximum ' + lonName} width={8}
-          type={this.state.coord != 'E' ? 'longitude' : 'hms'}
-          name='lonMax' value={this.state.lonMax} onChange={this.handleLinkedChange} />
-        <InputAngle label={'Maximum ' + latName} type='latitude' width={8}
-          name='latMax' value={this.state.latMax} onChange={this.handleLinkedChange} />
-      </Form.Group>
+              <Form autoComplete='off'>
+                <Header as='h2'>Area selection</Header>
+                  All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
+                  , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left
+                  using the selection button (the square).
+                <Header as='h3' dividing>Coordinate system</Header>
+                <Form.Group inline>
+                  <Form.Radio label='Galatic' name='coord' value='G'
+                    checked={this.props.state.coord === 'G'} onChange={this.handleCoordChange} />
+                  <Form.Radio label='Equatorial (hms)' name='coord' value='E'
+                    checked={this.props.state.coord === 'E'} onChange={this.handleCoordChange} />
+                  <Form.Radio label='Equatorial (degrees)' name='coord' value='D'
+                    checked={this.props.state.coord === 'D'} onChange={this.handleCoordChange} />
+                </Form.Group>
+                <Header as='h3' dividing>Rectangular selection: center and widths</Header>
+                <Form.Input label='Object name (Simbad resolved)' placeholder='object name' width={16}
+                  name='objectName' value={this.props.state.objectName} onChange={this.handleChange}
+                  onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && this.handleSimbad()}
+                  onBlur={this.handleSimbad} error={this.props.state.errors.objectName}
+                  action='Search' />
+                <Form.Group>
+                  <InputAngle label={'Center ' + lonName} width={8}
+                    type={this.props.state.coord != 'E' ? 'longitude' : 'hms'}
+                    name='lonCtr' value={this.props.state.lonCtr} onChange={this.handleLinkedChange} />
+                  <InputAngle label={'Center ' + latName} type='latitude' width={8}
+                    name='latCtr' value={this.props.state.latCtr} onChange={this.handleLinkedChange} />
+                </Form.Group>
+                <Form.Group>
+                  <InputAngle label='Width' width={8}
+                    type={this.props.state.coord != 'E' ? 'longitude' : 'hms'}
+                    name='lonWdt' value={this.props.state.lonWdt} onChange={this.handleLinkedChange} />
+                  <InputAngle label='Height' type='longitude' width={8}
+                    name='latWdt' value={this.props.state.latWdt} onChange={this.handleLinkedChange} />
+                </Form.Group>
+                <Header as='h3' dividing>Rectangular selection: corners</Header>
+                <Form.Group>
+                  <InputAngle label={'Minimum ' + lonName} width={8}
+                    type={this.props.state.coord != 'E' ? 'longitude' : 'hms'}
+                    name='lonMin' value={this.props.state.lonMin} onChange={this.handleLinkedChange} />
+                  <InputAngle label={'Minimum ' + latName} type='latitude' width={8}
+                    name='latMin' value={this.props.state.latMin} onChange={this.handleLinkedChange} />
+                </Form.Group>
+                <Form.Group>
+                  <InputAngle label={'Maximum ' + lonName} width={8}
+                    type={this.props.state.coord != 'E' ? 'longitude' : 'hms'}
+                    name='lonMax' value={this.props.state.lonMax} onChange={this.handleLinkedChange} />
+                  <InputAngle label={'Maximum ' + latName} type='latitude' width={8}
+                    name='latMax' value={this.props.state.latMax} onChange={this.handleLinkedChange} />
+                </Form.Group>
+                <Button secondary style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
+                  onClick={this.handleBack} />
+                <Button style={{ width: "110px" }} icon={undo ? 'undo' : 'delete'} content={undo ? 'Undo' : 'Clear'}
+                  color={undo ? 'green' : 'red'} onClick={this.clearOrUndo} />
+                <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
+                  onClick={this.handleNext} />
               </Form>
             </Grid.Column>
             <Grid.Column style={{ flex: "0 0 300px" }}>

@@ -61,7 +61,7 @@ export class InputAngle extends React.Component {
       if (value.length > 0) {
         if (value[0] >= '0' && value[0] <= '9') sign = '+';
         else if (value[0] === '-' || value[0] === '–' || value[0] === '—' || value[0] === '+') {
-          sign = (value[0] ==='+') ? '+' : '–';
+          sign = (value[0] === '+') ? '+' : '–';
           value = value.substr(1);
         }
       }
