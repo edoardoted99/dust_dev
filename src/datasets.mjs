@@ -1,9 +1,9 @@
 // @ts-check
 
-import logoVizier from './logos/VizieR.png';
-import logoIRSA from './logos/IRSA.png';
-import logo2MASS from './logos/2MASS.png';
-import logoEmpty from './logos/empty.png';
+import logoVizier from 'url:./logos/VizieR.png';
+import logoIRSA from 'url:./logos/IRSA.png';
+import logo2MASS from 'url:./logos/2MASS.png';
+import logoEmpty from 'url:./logos/empty.png';
 
 export const serversDict = {
   VizieR: {

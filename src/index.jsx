@@ -8,13 +8,23 @@ import 'semantic-ui-css/semantic.min.css'
 import { Step } from 'semantic-ui-react'
 import { MyForm0 } from './form0.mjs'
 import { MyForm1 } from './form1.mjs'
+import { observable } from 'mobx'
  
-class MyApp extends React.Component {  
+class MyApp extends React.Component {
+  @observable configuration = [
+    {
+      catalog: '', server: '', bandlist: [], morphclass: '', filter: true
+    },
+    {
+      objectName: '', coord: 'G',
+      lonCtr: '', lonWdt: '', lonMin: '', lonMax: '', lonType: 0,
+      latCtr: '', latWdt: '', latMin: '', latMax: '', latType: 0
+    }];
+  
   constructor(props) {
     super(props);
     this.state = {
       step: 0,
-      wait: false,
       states: [
         {
           catalog: '', server: '', bandlist: [], morphclass: '', filter: true,

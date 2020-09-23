@@ -1,27 +1,29 @@
 {
   "name": "dust",
   "version": "1.0.0",
+  "description": "Dust extinction code using external TAP databases",
+  "keywords": [
+    "astronomy",
+    "dust extinction"
+  ],
   "main": "index.js",
   "repository": "https://github.com/astrozot/dust.git",
   "author": "Marco Lombardi <marco.lombardi@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "babel-preset-env": "^1.7.0",
-    "babel-preset-react": "^6.24.1",
-    "parcel-bundler": "^1.12.4"
+    "@babel/plugin-proposal-decorators": "^7.10.5",
+    "@babel/plugin-transform-runtime": "^7.11.5",
+    "parcel": "next"
   },
   "dependencies": {
-    "jquery": "^3.5.1",
-    "logos": "^1.0.4",
     "mobx": "^5.15.7",
     "mobx-react": "^6.3.0",
-    "react": "^16.8.0",
-    "react-dom": "^16.8.0",
-    "semantic-ui-css": "^2.4.1",
-    "semantic-ui-react": "^1.2.1"
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "semantic-ui-react": "^1.3.0"
   },
   "scripts": {
-    "start": "NODE_ENV=development parcel src/index.html --open",
-    "build": "NODE_ENV=productioon parcel build dist/index.html --public-url ./"
+    "start": "parcel serve ./src/index.html --open chrome",
+    "build": "parcel build ./src/index.html"
   }
 }
