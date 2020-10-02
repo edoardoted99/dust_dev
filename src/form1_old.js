@@ -3,10 +3,9 @@
 
 import React from 'react'
 
-import 'semantic-ui-css/semantic.min.css'
 import { Container, Dimmer, Loader, Form, Header, Grid, Button } from 'semantic-ui-react'
-import { InputAngle } from './inputangle.mjs'
-import { galactic2equatorial, equatorial2galactic } from './coordinates.mjs'
+import { InputAngle } from './inputangle.js'
+import { galactic2equatorial, equatorial2galactic } from './coordinates.js'
 
 /**
  * Parse an angle and returns an array of fields
@@ -274,7 +273,7 @@ export class MyForm1 extends React.Component {
           stateUpdate.lonMax = max;
         }
         if (this.props.state.latWdt) {
-          let [min, max] = this.cw2mm(stateUpdate.latCtr, stateUpdate.latWdt || this.props.state.lonWdt, 'latitude');
+          let [min, max] = this.cw2mm(stateUpdate.latCtr, stateUpdate.latWdt || this.props.state.latWdt, 'latitude');
           stateUpdate.latType = 1;
           stateUpdate.latMin = min;
           stateUpdate.latMax = max;

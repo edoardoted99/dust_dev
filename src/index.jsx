@@ -6,77 +6,40 @@ import ReactDOM from 'react-dom'
 
 import 'semantic-ui-css/semantic.min.css'
 import { Step } from 'semantic-ui-react'
-import { MyForm0 } from './form0.mjs'
-import { MyForm1 } from './form1.mjs'
+import { MyForm0 } from './form0.js'
+import { MyForm1 } from './form1.js'
 import { observable } from 'mobx'
- 
-class MyApp extends React.Component {
-  @observable configuration = [
-    {
-      catalog: '', server: '', bandlist: [], morphclass: '', filter: true
-    },
-    {
-      objectName: '', coord: 'G',
-      lonCtr: '', lonWdt: '', lonMin: '', lonMax: '', lonType: 0,
-      latCtr: '', latWdt: '', latMin: '', latMax: '', latType: 0
-    }];
-  
-  constructor(props) {
-    super(props);
-    this.state = {
-      step: 0,
-      states: [
-        {
-          catalog: '', server: '', bandlist: [], morphclass: '', filter: true,
-          errors: {}, undo: false
-        },
-        {
-          objectName: '', coord: 'G',
-          lonCtr: '', lonWdt: '', lonMin: '', lonMax: '', lonType: 0,
-          latCtr: '', latWdt: '', latMin: '', latMax: '', latType: 0,
-          errors: {}, undo: false
-        }],
-    };
-    this.setStep = this.setStep.bind(this);
-    this.setStates = this.setStates.bind(this)
+
+
+export function MyApp(props) 
+{
+  const [step, setStep] = React.useState(0);
+  let form;
+  switch (step) {
+    case 0:
+      form = (<MyForm0 onNext={() => setStep(1)} />);
+      break;
+    case 1:
+      form = (<MyForm1 onNext={() => setStep(2)} onBack={() => setStep(0)} />);
+      break;
   }
 
-  setStep(step) {
-    this.setState({ step: step });
-  }
-
-  setStates(newState) {
-    this.setState(s => { s.states[s.step] = { ...s.states[s.step], ...newState }; return s; });
-  }
-
-  render() {
-    let form;
-    switch (this.state.step) {
-      case 0:
-        form = (<MyForm0 state={this.state.states[0]} setState={this.setStates}
-          onNext={(e, s) => this.setState({ step: 1 })} />);
-        break;
-      case 1:
-        form = (<MyForm1 state={this.state.states[1]} setState={this.setStates}
-          onNext={() => this.setState({ step: 2 })} onBack={() => this.setState({ step: 0 })} />);
-        break;
-    }
-    return (<div>
-      <AppStepGroup step={this.state.step} setStep={this.setStep} />
+  return (
+    <div>
+      <AppStepGroup step={step} setStep={setStep} />
       {form}
-    </div>);
-  }
+    </div>
+  );
 }
- 
 
 function AppStepGroup(props) {
-  var step = props.step;
-  var steps = [];
-  var titles = ['Dataset', 'Science field', 'Control field', 'Map making'];
-  var icons = ['database', 'crosshairs', 'eyedropper', 'map outline'];
-  var descriptions = ['Select the database to use', 'Select the location of the science field',
+  const step = props.step;
+  let steps = [];
+  const titles = ['Dataset', 'Science field', 'Control field', 'Map making'];
+  const icons = ['database', 'crosshairs', 'eyedropper', 'map outline'];
+  const descriptions = ['Select the database to use', 'Select the location of the science field',
     'Select the location of the control field', 'Set the final parameters'];
-  var setStep = (s) => () => props.setStep(s)
+  let setStep = (s) => () => props.setStep(s)
   
   for (let i of [0, 1, 2, 3]) {
     steps.push({
@@ -93,11 +56,7 @@ function AppStepGroup(props) {
   return (<Step.Group widths={4} items={steps} />);
 }
 
-
 ReactDOM.render(
   <MyApp />,
   document.getElementById('root')
 );
-
-
-export default MyApp;

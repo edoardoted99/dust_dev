@@ -13,7 +13,6 @@ export class InputAngle extends React.Component {
     this.state = { value: '' };
   }
 
-  
   /**
    * Validate the current input
    *
@@ -105,8 +104,8 @@ export class InputAngle extends React.Component {
   }
 
   handleBlur(e) {
-    let fixedValue = this.fixInput(this.state.value + ' ');
-    if (this.state.value != fixedValue) {
+    let fixedValue = this.fixInput(this.props.value + ' ');
+    if (this.props.value != fixedValue) {
       this.setState({ value: fixedValue });
       if (this.props.onChange) this.props.onChange(e, { ...this.props, value: fixedValue });
     }
