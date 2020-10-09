@@ -2,7 +2,9 @@
 'use strict';
 
 import _ from 'lodash'
-import { observable, action, isObservableProp, isComputedProp, when } from "mobx"
+import { observable, action, isObservableProp, isComputedProp, when } from 'mobx'
+import { observer } from 'mobx-react'
+
 
 /// <reference path="" />
 
@@ -53,7 +55,7 @@ export class FormState {
   /**
    * Handle the change of an observable. 
    *
-   * @param {Event} e The event that triggered the call
+   * @param {React.SyntheticEvent} e The event that triggered the call
    * @param {Object} o The associated object: we read the `name`, 
    *   and the `value` or `checked` fields.
    * @memberof FormState
@@ -63,10 +65,11 @@ export class FormState {
    */
   @action.bound handleChange(e, o) {
     const { name, value, checked } = o;
-    const handlerName = 'handle' + name[0].toUpperCase() + name.substr(1);
+    const path = _.toPath(name);
+    const handlerName = 'handle' + _.join(_.map(path, word => word[0].toUpperCase() + word.substr(1)), '_');
     if (this[handlerName]) this[handlerName](e, o);
     if (!e.defaultPrevented) {
-      this[name] = (value !== undefined) ? value : checked;
+      _.set(this, path, (value !== undefined) ? value : checked);
       this.undo = false;
     }
   }
@@ -134,5 +137,12 @@ export class FormState {
     }
   }
 
+  props(name) {
+    const value = _.get(this, name);
+    const error = _.get(this.errors, name);
+    const onChange = this.handleChange;
+    return { name, value, error, onChange };
+  }
 }
+
 

@@ -5,11 +5,12 @@ import React from 'react'
 
 import './css/sql.css'
 import _ from 'lodash'
-import { observable, computed, configure, action } from "mobx"
-import { observer } from "mobx-react"
+import { observable, computed, configure, action } from 'mobx'
+import { observer } from 'mobx-react'
 import { Container, Loader, Dimmer, Grid, Form, Header, Button, Accordion } from 'semantic-ui-react'
 import { serversDict, datasetsDict, colorDict } from './datasets.js'
 import { FormState } from './formstate.js'
+import { OpenSeaDragonViewer } from './openseadragon';
 
 configure({ enforceActions: 'observed' });
 
@@ -22,8 +23,8 @@ export class Form0State extends FormState {
   @observable filter = false;
 
   validators = {
-    catalog: x => x == '' && 'Please select a catalog',
-    server: x => x == '' && 'Please select a server',
+    catalog: x => x === '' && 'Please select a catalog',
+    server: x => x === '' && 'Please select a server',
     bandlist: x => (x.length < 2) && 'At least two bands are required'
   }
 
@@ -42,6 +43,14 @@ export class Form0State extends FormState {
       this.bandlist = _.map(bands, (v) => v[0]);
       this.morphclass = '';
     }
+  }
+
+  @computed({ keepAlive: true }) get mask() {
+    if (this.catalog) {
+      const source = datasetsDict[this.catalog].mask;
+      if (source) return `/static/masks/${source}.dzi`;
+      else return 'static/tiles/dust.dzi';
+    } else return null;
   }
 
   @computed({ keepAlive: true }) get servers() {
@@ -65,19 +74,20 @@ export class Form0State extends FormState {
   }
 
   @computed({ keepAlive: true }) get bandsWithFields() {
-    let result1 = [], result2 = {};
+    let result1 = [], result2 = {}, result3 = {};
     if (this.catalog && this.server) {
       let allowedBands = datasetsDict[this.catalog].bands, lastColNum = -1;
       if (_.isPlainObject(allowedBands)) allowedBands = allowedBands[this.server];
-      for (let [name, mag, err, _] of Object.values(allowedBands).reverse()) {
+      for (let [name, mag, err, k] of Object.values(allowedBands).reverse()) {
         let colNum = colorDict.bands[name.toUpperCase().replaceAll("'", '')];
         if (colNum <= lastColNum) colNum = lastColNum + 1;
         result1.push({ text: name, value: name, color: colorDict.colorNames[colNum] });
         result2[name] = [mag, err];
+        result3[name] = k;
         lastColNum = colNum;
       }
     }
-    return { bands: result1.reverse(), fields: result2 };
+    return { bands: result1.reverse(), fields: result2, reddeningLaw: result3 };
   }
 
   @computed({ keepAlive: true }) get bands() {
@@ -101,6 +111,10 @@ export class Form0State extends FormState {
     return this.morphclassesWithFields.morphclasses;
   }
 
+  @computed({ keepAlive: true }) get reddeningLaw() {
+    return _.map(this.bandlist, b => this.bandsWithFields.reddeningLaw[b]);
+  }
+
   @computed({ keepAlive: true }) get adql() {
     let fields = [], extra, conditions = [];
     if (this.catalog && this.server) {
@@ -108,7 +122,7 @@ export class Form0State extends FormState {
       if (_.isPlainObject(catalogQuery)) catalogQuery = catalogQuery[this.server];
       if (Array.isArray(catalogQuery)) catalogQuery = catalogQuery.join(', ')
       fields = [].concat(this.coords);
-      fields = fields.concat(_.flatMap(this.bandlist, (b) => this.bandsWithFields.fields[b]));
+      fields = fields.concat(_.flatMap(this.bandlist, b => this.bandsWithFields.fields[b]));
       if (this.morphclass) fields.push(this.morphclassesWithFields.fields[this.morphclass]);
       extra = datasetsDict[this.catalog].extra;
       if (_.isPlainObject(extra)) extra = extra[this.server];
@@ -136,39 +150,35 @@ export class Form0State extends FormState {
   }
 }
 
-
-const state0 = new Form0State();
+export const state0 = new Form0State();
 
 const FormCatalog = observer((props) => {
   return (
-    <Form.Select fluid width={10} name='catalog' value={state0.catalog} label='Catalog'
-      options={state0.catalogs} placeholder='Catalog' error={state0.errors.catalog}
-      onChange={state0.handleChange} {...props} />
+    <Form.Select fluid width={10} {...state0.props('catalog')} label='Catalog'
+      options={state0.catalogs} placeholder='Catalog' {...props} />
   );
 });
 
 const FormServer = observer((props) => {
   return (
-    <Form.Select fluid width={6} name='server' value={state0.server} label='Server'
-      options={state0.servers} placeholder='Server' error={state0.errors.server}
-      onChange={state0.handleChange} {...props} />
+    <Form.Select fluid width={6} {...state0.props('server')} label='Server'
+      options={state0.servers} placeholder='Server' {...props} />
   );
 });
 
 const FormBands = observer((props) => {
   return (
-    <Form.Dropdown fluid width={10} name='bandlist' value={state0.bandlist} multiple search selection label='Bands'
-      options={state0.bands} placeholder='Select bands'
-      renderLabel={option => ({ color: option.color, content: option.text })}
-      error={state0.errors.bandlist} onChange={state0.handleChange} {...props} />
+    <Form.Dropdown multiple search selection fluid width={10} {...state0.props('bandlist')}
+      label='Bands' options={state0.bands} placeholder='Select bands'
+      renderLabel={option => ({ color: option.color, content: option.text })} {...props} />
   );
 });
 
 const FormMorhClass = observer((props) => {
   return (
-    <Form.Dropdown fluid width={6} search selection clearable name='morphclass' value={state0.morphclass}
+    <Form.Dropdown fluid width={6} search selection clearable {...state0.props('morphclass')}
       label='Morphological classification' options={state0.morphclasses} placeholder='No classification'
-      onChange={state0.handleChange} {...props} />
+      {...props} />
   );
 });
 
@@ -197,6 +207,12 @@ const ClearButton = observer(() => {
       color={state0.undo ? 'green' : 'red'} onClick={state0.resetOrUndo} />
   );
 });
+
+const Map = observer(() => {
+  if (state0.mask) {
+    return (<OpenSeaDragonViewer image={state0.mask} select scalebar />);
+  } else return (<></>);
+})
 
 export function MyForm0(props) {
   const [wait, setWait] = React.useState(false);
@@ -236,6 +252,9 @@ export function MyForm0(props) {
               <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
                 onClick={handleNext} />
             </Form>
+          </Grid.Column>
+          <Grid.Column style={{ width: "400px" }}>
+            <Map />
           </Grid.Column>
         </Grid>
       </Dimmer.Dimmable>

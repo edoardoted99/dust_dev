@@ -1,8 +1,12 @@
 // @ts-check
 
+// @ts-ignore
 import logoVizier from 'url:./logos/VizieR.png';
+// @ts-ignore
 import logoIRSA from 'url:./logos/IRSA.png';
+// @ts-ignore
 import logo2MASS from 'url:./logos/2MASS.png';
+// @ts-ignore
 import logoEmpty from 'url:./logos/empty.png';
 
 export const serversDict = {
@@ -20,7 +24,7 @@ export const serversDict = {
 
 export const datasetsDict = {
   '2MASS-PSC': {
-    description: '2MASS-PSC: Two Micron All Sky Survey Point Source Catalog',
+    description: '2MASS Point Source Catalog',
     image: logo2MASS,
     servers: ['VizieR', 'IRSA'],
     catalogs: {

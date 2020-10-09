@@ -1,8 +1,10 @@
 // @ts-check
 'use strict';
 
+import _ from 'lodash'
 import React from 'react'
-import { Form } from 'semantic-ui-react'
+import { FormField, Input, Label } from 'semantic-ui-react'
+import { Angle } from './angle.js'
 
 // Properties: value, onChange, onBlur, longitude, latitude, hms
 export class InputAngle extends React.Component {
@@ -10,6 +12,7 @@ export class InputAngle extends React.Component {
     super(props);
     this.handleChange = this.handleChange.bind(this);
     this.handleBlur = this.handleBlur.bind(this);
+    this.handleConvert = this.handleConvert.bind(this);
     this.state = { value: '' };
   }
 
@@ -88,7 +91,6 @@ export class InputAngle extends React.Component {
   handleChange(e, o) {
     let { value } = o, fixedValue = this.fixInput(value);
     if (this.validate(fixedValue, true)) {
-      this.setState({ value: fixedValue });
       if (this.props.onChange) {
         let parsedValue = fixedValue.replace(/[°'"]/g, '').split(' ').map(parseFloat);
         // Fix negative values
@@ -106,16 +108,31 @@ export class InputAngle extends React.Component {
   handleBlur(e) {
     let fixedValue = this.fixInput(this.props.value + ' ');
     if (this.props.value != fixedValue) {
-      this.setState({ value: fixedValue });
       if (this.props.onChange) this.props.onChange(e, { ...this.props, value: fixedValue });
     }
     if (this.props.onBlur) this.props.onBlur(e);
   }
 
+  handleConvert(e) {
+    const factors = [60, 60, 1/3600];
+    const value = new Angle(this.props.value, this.props.type), numFields = value.values.length;
+    if (_.isFinite(value.value)) {
+      const newValue = new Angle(value.value * factors[numFields - 1], this.props.type, numFields % 3 + 1);
+      if (this.props.onChange) this.props.onChange(e, { ...this.props, value: newValue.angle });
+    }
+  }
+
   render() {
+    // We cannot use directly props below: the error appears in different components
+    const { name, label, error } = this.props;
     return (
-      <Form.Input value={this.state.value} {...this.props}
-        type='text' onChange={this.handleChange} onBlur={this.handleBlur} />
-    );
+      <FormField error={Boolean(error)} width={this.props.width}>
+        {label ? <label>{label}</label> : <></>}
+        <Input type='text' onChange={this.handleChange} onBlur={this.handleBlur}
+          label={{ icon: 'globe', onClick: this.handleConvert }}
+          labelPosition='right corner' 
+          {..._.omit(this.props, ['label', 'width', 'error', 'onChange'])} />
+        {error ? <Label prompt pointing role='alert'>{error}</Label> : <></>}
+      </FormField>);
   }
 }
