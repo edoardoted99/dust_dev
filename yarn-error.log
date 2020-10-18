@@ -1,5 +1,5 @@
 Arguments: 
-  /Applications/anaconda3/bin/node /Users/mlombard/.yarn/bin/yarn.js start
+  /Applications/anaconda3/bin/node /Users/mlombard/.yarn/bin/yarn.js add wcs.js
 
 PATH: 
   /Users/mlombard/.yarn/bin:/Users/mlombard/.config/yarn/global/node_modules/.bin:/Applications/anaconda3/bin:/Applications/anaconda3/condabin:.:/Users/mlombard/bin:/Applications/anaconda3/bin:/usr/local/bin:/Library/TeX/texbin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/opt/local/bin:/usr/X11R6/bin
@@ -14,12 +14,17 @@ Platform:
   darwin x64
 
 Trace: 
-  SyntaxError: /Users/mlombard/src/react/dust/package.json: Unexpected token } in JSON at position 908
-      at JSON.parse (<anonymous>)
-      at /Users/mlombard/.yarn/lib/cli.js:1625:59
-      at Generator.next (<anonymous>)
-      at step (/Users/mlombard/.yarn/lib/cli.js:310:30)
-      at /Users/mlombard/.yarn/lib/cli.js:321:13
+  Error: https://registry.yarnpkg.com/wcs.js: Not found
+      at Request.params.callback [as _callback] (/Users/mlombard/.yarn/lib/cli.js:66988:18)
+      at Request.self.callback (/Users/mlombard/.yarn/lib/cli.js:140749:22)
+      at Request.emit (events.js:200:13)
+      at Request.<anonymous> (/Users/mlombard/.yarn/lib/cli.js:141721:10)
+      at Request.emit (events.js:200:13)
+      at IncomingMessage.<anonymous> (/Users/mlombard/.yarn/lib/cli.js:141643:12)
+      at Object.onceWrapper (events.js:288:20)
+      at IncomingMessage.emit (events.js:205:15)
+      at endReadableNT (_stream_readable.js:1154:12)
+      at processTicksAndRejections (internal/process/task_queues.js:84:9)
 
 npm manifest: 
   {
@@ -54,7 +59,7 @@ npm manifest:
         {
           "staticPath": "static/tiles",
           "staticOutDir": "tiles",
-          "watcherGlob": "**",
+          "watcherGlob": "**"
         }
       ]
     },

@@ -3,13 +3,13 @@
 
 import React from 'react'
 
-import './css/sql.css'
 import _ from 'lodash'
-import { observable, computed, configure, action } from 'mobx'
+import { observable, configure } from 'mobx'
 import { observer } from "mobx-react"
 import { Container, Loader, Dimmer, Grid, Form, Header, Button, FormField, Input, Label } from 'semantic-ui-react'
 import { InputAngle } from './inputangle.js'
 import { CooFormState } from './cooform.js'
+import { OpenSeaDragonViewer } from './openseadragon.js';
 
 configure({ enforceActions: 'observed' });
 
@@ -85,7 +85,7 @@ const InputUnit = observer((props) => {
 
 const NumComponents = observer((props) => {
   return (
-    <Form.Dropdown selection {...state2.props('numComponents')} label='Number of components'
+    <Form.Dropdown selection fluid {...state2.props('numComponents')} label='Number of components'
       options={_.map(_.range(1, 6), n => ({ text: String(n), value: n }))} placeholder='# components'
       {...props} />
   );
@@ -93,7 +93,7 @@ const NumComponents = observer((props) => {
 
 const ExtinctionSteps = observer((props) => {
   return (
-    <Form.Dropdown selection {...state2.props('extinctionSteps')} label='Extinction steps'
+    <Form.Dropdown selection fluid {...state2.props('extinctionSteps')} label='Extinction steps'
       options={_.map(_.range(1, 9), n => ({ text: String(n), value: n }))} placeholder='# steps'
       {...props} />
   );
@@ -101,7 +101,7 @@ const ExtinctionSteps = observer((props) => {
 
 const ExtinctionSubsteps = observer((props) => {
   return (
-    <Form.Dropdown selection {...state2.props('extinctionSubsteps')} label='Extinction substeps'
+    <Form.Dropdown selection fluid {...state2.props('extinctionSubsteps')} label='Extinction substeps'
       options={_.map(_.range(1, 6), n => ({ text: String(n), value: n }))} placeholder='# subteps'
       {...props} />
   );
@@ -125,6 +125,11 @@ const ClearButton = observer(() => {
   );
 });
 
+const Map = observer(() => {
+  return (<OpenSeaDragonViewer id='osd' image={state2.mask} select scalebar cooform={state2} />);
+})
+
+
 export const MyForm2 = observer((props) => {
   const [wait] = React.useState(false);
 
@@ -133,12 +138,16 @@ export const MyForm2 = observer((props) => {
   function handleNext(e) {
     e.preventDefault();
     state2.validate();
-    // if (state2.validate()) props.onNext(e);
+    if (state2.validate()) props.onNext(e);
   }
 
   function handleBack(e) {
     e.preventDefault();
     props.onBack(e);
+  }
+
+  function handleCopy(e) {
+    state2.copyFrom(props.state1);
   }
 
   return (
@@ -147,87 +156,87 @@ export const MyForm2 = observer((props) => {
         <Dimmer active={Boolean(wait)} inverted >
           <Loader inverted indeterminate content={String(wait)} />
         </Dimmer>
-        <Grid stackable columns={2}>
-          <Grid.Column style={{ flex: "1" }}>
-            <Form autoComplete='off'>
-              <Header as='h2'>Control field</Header>
-                  Ideally, the area selected for the control field should be as close as possible 
-                  to the science field, but with as little as possible extinction.
-                  <br/>
-                  All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
-                  , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left
-                  using the selection button (the square).
-                <Header as='h3' dividing>Coordinate system</Header>
-              <FormCooSys onChange={handleChange} />
-              <Header as='h3' dividing>Rectangular selection: center and widths</Header>
-              <FormSymbad />
+        <Form autoComplete='off'>
+          <Header as='h2'>Control field</Header>
+              Ideally, the area selected for the control field should be as close as possible
+              to the science field, but with as little as possible extinction.
+              <br />
+              All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
+              , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left
+              using the selection button (the square).
+              <p></p>
+          <Button content='Copy science field area' icon='clone outline' labelPosition='left' basic size='small'
+            onClick={handleCopy} />
 
-              <Form.Group>
-                <FormAngle label={'Center ' + state2.lonName} width={8} name='lonCtr' 
-                  type={state2.cooSys != 'E' ? 'longitude' : 'hms'} />
-                <FormAngle label={'Center ' + state2.latName} width={8} name='latCtr'
-                  type='latitude' />
-              </Form.Group>
-              <Form.Group>
-                <FormAngle label='Width' width={8} name='lonWdt' 
-                  type={state2.cooSys != 'E' ? 'longitude' : 'hms'}
-                  />
-                <FormAngle label='Height' width={8} name='latWdt' 
-                  type='longitude' />
-              </Form.Group>
-              <Header as='h3' dividing>Rectangular selection: corners</Header>
-              <Form.Group>
-                <FormAngle label={'Minimum ' + state2.lonName} width={8} name='lonMin' 
-                  type={state2.cooSys != 'E' ? 'longitude' : 'hms'} />
-                <FormAngle label={'Minimum ' + state2.latName} width={8} name='latMin' 
-                  type='latitude' />
-              </Form.Group>
-              <Form.Group>
-                <FormAngle label={'Maximum ' + state2.lonName} width={8} name='lonMax' 
-                  type={state2.cooSys != 'E' ? 'longitude' : 'hms'} />
-                <FormAngle label={'Maximum ' + state2.latName} width={8} name='latMax' 
-                  type='latitude' />
-              </Form.Group>
+          <Header as='h3' dividing>Coordinate system</Header>
+          <FormCooSys onChange={handleChange} />
+          <Header as='h3' dividing>Rectangular selection: center and widths</Header>
+          <FormSymbad />
 
-              <Header as='h2'>Calibration parameters</Header>
-              <Header as='h3' dividing>Star selection</Header>
+          <Form.Group>
+            <FormAngle label={'Center ' + state2.lonName} width={8} name='lonCtr'
+              type={state2.cooSys != 'E' ? 'longitude' : 'hms'} />
+            <FormAngle label={'Center ' + state2.latName} width={8} name='latCtr'
+              type='latitude' />
+          </Form.Group>
+          <Form.Group>
+            <FormAngle label='Width' width={8} name='lonWdt'
+              type={state2.cooSys != 'E' ? 'longitude' : 'hms'}
+            />
+            <FormAngle label='Height' width={8} name='latWdt'
+              type='longitude' />
+          </Form.Group>
+          <Header as='h3' dividing>Rectangular selection: corners</Header>
+          <Form.Group>
+            <FormAngle label={'Minimum ' + state2.lonName} width={8} name='lonMin'
+              type={state2.cooSys != 'E' ? 'longitude' : 'hms'} />
+            <FormAngle label={'Minimum ' + state2.latName} width={8} name='latMin'
+              type='latitude' />
+          </Form.Group>
+          <Form.Group>
+            <FormAngle label={'Maximum ' + state2.lonName} width={8} name='lonMax'
+              type={state2.cooSys != 'E' ? 'longitude' : 'hms'} />
+            <FormAngle label={'Maximum ' + state2.latName} width={8} name='latMax'
+              type='latitude' />
+          </Form.Group>
+
+          <Header as='h2'>Calibration parameters</Header>
+          <Header as='h3' dividing>Star selection</Header>
               The algorithm selects, within the control field, a region with low extinction and,
               within this region, stars with low extinction. Specify here the fractional area of
               the selected region and the fraction of the selected stars.
               <p />
-              <Form.Group>
-                <InputUnit label='Fraction of area to use' placeholder='Fractional area'
-                  name='areaFraction' unit='%' width={8} />
-                <InputUnit label='Fraction of stars to use' placeholder='Fractional stars'
-                  name='starFraction' unit='%' width={8} />
-              </Form.Group>
+          <Form.Group>
+            <InputUnit label='Fraction of area to use' placeholder='Fractional area'
+              name='areaFraction' unit='%' width={8} />
+            <InputUnit label='Fraction of stars to use' placeholder='Fractional stars'
+              name='starFraction' unit='%' width={8} />
+          </Form.Group>
 
-              <Header as='h3' dividing>Extreme deconvolution</Header>
+          <Header as='h3' dividing>Extreme deconvolution</Header>
               The extreme deconvolution algorithm models the intrinsic colors of stars in the
               control field using a Gaussian mixture model with a given number of components.
               Additionally, the algorithm used here, performs deconvolutions at various extinction
               levels to capture the change in the population of background stars induced by the
               extinction.
               <p />
-              <Form.Group>
-                <NumComponents width={4} />
-                <InputUnit label='Max extinction' placeholder='max extinction'
-                    name='maxExtinction' unit='mag' width={4} />
-                <ExtinctionSteps width={4} />
-                <ExtinctionSubsteps width={4} />
-              </Form.Group>
+          <Form.Group>
+            <NumComponents width={4} />
+            <InputUnit label='Max extinction' placeholder='max extinction'
+              name='maxExtinction' unit='mag' width={4} />
+            <ExtinctionSteps width={4} />
+            <ExtinctionSubsteps width={4} />
+          </Form.Group>
 
-              <Header as='h3' dividing>Reddening law</Header>
-              <ReddeningLaw reddeningLaw={props.reddeningLaw} />
+          <Header as='h3' dividing>Reddening law</Header>
+          <ReddeningLaw reddeningLaw={props.reddeningLaw} />
 
-              <Button style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
-                onClick={handleBack} />
-              <ClearButton />
-              <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
-                onClick={handleNext} />
-            </Form>
-          </Grid.Column>
-        </Grid>
+          <Button style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
+            onClick={handleBack} />
+          <ClearButton />
+          <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
+            onClick={handleNext} />
+        </Form>
       </Dimmer.Dimmable>
     </Container>);
 });

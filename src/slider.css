@@ -1,0 +1,13 @@
+.ui.progress.slider .bar {
+  min-width: 0;
+}
+
+.ui.progress.slider.cursored .bar:after {
+  content: '';
+  height: 1em;
+  width: 1em;
+  border-radius: 1em;
+  float: right;
+  background: #888;
+  margin-top: -3px;
+}

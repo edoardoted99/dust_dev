@@ -24,14 +24,55 @@ export class CooFormState extends FormState {
   @observable latMax = '';
 
   validators = {
-    lonCtr: x => x === '' && 'Please enter a valid coordinate',
-    latCtr: x => x === '' && 'Please enter a valid coordinate',
-    lonWdt: x => x === '' && 'Please enter a valid width',
-    latWdt: x => x === '' && 'Please enter a valid width',
-    lonMin: x => x === '' && 'Please enter a valid coordinate',
-    latMin: x => x === '' && 'Please enter a valid coordinate',
-    lonMax: x => x === '' && 'Please enter a valid coordinate',
-    latMax: x => x === '' && 'Please enter a valid coordinate'
+    lonCtr: x => x.length <= 1 && 'Please enter a valid coordinate',
+    latCtr: x => x.length <= 1 && 'Please enter a valid coordinate',
+    lonWdt: x => x.length <= 1 && 'Please enter a valid width',
+    latWdt: x => x.length <= 1 && 'Please enter a valid width',
+    lonMin: x => x.length <= 1 && 'Please enter a valid coordinate',
+    latMin: x => x.length <= 1 && 'Please enter a valid coordinate',
+    lonMax: x => x.length <= 1 && 'Please enter a valid coordinate',
+    latMax: x => x.length <= 1 && 'Please enter a valid coordinate'
+  }
+
+  @computed({ keepAlive: true }) get lonCtrAngle() {
+    return new Angle(this.lonCtr, (this.cooSys === 'E') ? 'hms' : 'longitude');
+  }
+  set lonCtrAngle(angle) { this.lonCtr = angle.angle; }
+  @computed({ keepAlive: true }) get latCtrAngle() {
+    return new Angle(this.latCtr, 'latitude');
+  }
+  set latCtrAngle(angle) { this.latCtr = angle.angle; }
+  @computed({ keepAlive: true }) get lonWdtAngle() {
+    return new Angle(this.lonWdt, (this.cooSys === 'E') ? 'hms' : 'longitude');
+  }
+  set lonWdtAngle(angle) { this.lonWdt = angle.angle; }
+  @computed({ keepAlive: true }) get latWdtAngle() {
+    return new Angle(this.latWdt, 'latitude');
+  }
+  set latWdtAngle(angle) { this.latWdt = angle.angle; }
+  @computed({ keepAlive: true }) get lonMinAngle() {
+    return new Angle(this.lonMin, (this.cooSys === 'E') ? 'hms' : 'longitude');
+  }
+  set lonMinAngle(angle) { this.lonMin = angle.angle; }
+  @computed({ keepAlive: true }) get latMinAngle() {
+    return new Angle(this.latMin, 'latitude');
+  }
+  set latMinAngle(angle) { this.latMin = angle.angle; }
+  @computed({ keepAlive: true }) get lonMaxAngle() {
+    return new Angle(this.lonMax, (this.cooSys === 'E') ? 'hms' : 'longitude');
+  }
+  set lonMaxAngle(angle) { this.lonMax = angle.angle; }
+  @computed({ keepAlive: true }) get latMaxAngle() {
+    return new Angle(this.latMax, 'latitude');
+  }
+  set latMaxAngle(angle) { this.latMax = angle.angle; }
+
+  @computed({ keepAlive: true }) get area() {
+    let lonMin = this.lonMinAngle.degrees, lonMax = this.lonMaxAngle.degrees,
+      latMin = this.latMinAngle.degrees, latMax = this.latMaxAngle.degrees;
+    if (lonMin > lonMax) lonMin -= 360;
+    return Math.abs((lonMax - lonMin) * 180.0 / Math.PI *
+      (Math.sin(latMax * Math.PI / 180.0) - Math.sin(latMin * Math.PI / 180.0)));
   }
 
   @action.bound handleSimbad(e, o) {
@@ -72,12 +113,13 @@ export class CooFormState extends FormState {
           }
         }
         if (m) {
-          this.lonCtr = lon.angle;
-          this.latCtr = lat.angle;
+          this.lonCtrAngle = lon;
+          this.latCtrAngle = lat;
           if (size) {
-            this.lonWdt = (new Angle(size / (this.cooSys === 'E' ? 15 : 1),
-              this.cooSys === 'E' ? 'hms' : 'longitude', 2)).angle;
-            this.latWdt = (new Angle(size, 'longitude', 2)).angle;
+            const c = Math.cos(lat.degrees * Math.PI / 180.0)
+            this.lonWdtAngle = (new Angle(size / c / (this.cooSys === 'E' ? 15 : 1),
+              this.cooSys === 'E' ? 'hms' : 'longitude', 2));
+            this.latWdtAngle = (new Angle(size, 'longitude', 2));
           } else this.lonWdt = this.latWdt = '';
           this.errors.object = false;
           this.handleLinkedChange(e, { name: 'lonWdt', value: this.lonWdt });
@@ -178,12 +220,12 @@ export class CooFormState extends FormState {
         if (value === 'G') [dstLon.degrees, dstLat.degrees] = equatorial2galactic(srcLon.degrees, srcLat.degrees);
         else[dstLon.degrees, dstLat.degrees] = galactic2equatorial(srcLon.degrees, srcLat.degrees);
         // Update the state
-        this.lonCtr = dstLon.angle;
-        this.latCtr = dstLat.angle;
+        this.lonCtrAngle = dstLon;
+        this.latCtrAngle = dstLat;
         // Check if we have already entered widths: if so, update the corner coordinates
         if (this.lonWdt) {
           if (dstType !== srcType)
-            this.lonWdt = (new Angle(this.lonWdt, dstType)).scale$((value === 'E') ? (1.0 / 15.0) : 15).angle;
+            this.lonWdtAngle = (new Angle(this.lonWdt, dstType)).scale$((value === 'E') ? (1.0 / 15.0) : 15);
           const [min, max] = this.cw2mm(this.lonCtr, this.lonWdt, dstType);
           this.lonType = 1;
           this.lonMin = min;
@@ -197,5 +239,11 @@ export class CooFormState extends FormState {
         }
       }
     }
+  }
+
+  @action.bound copyFrom(orig) {
+    for (let field of ['cooSys', 'lonType', 'latType', 'lonCtr', 'latCtr', 'lonWdt', 'latWdt',
+      'lonMin', 'latMin', 'lonMax', 'latMax'])
+      this[field] = orig[field];
   }
 }

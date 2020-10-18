@@ -7,10 +7,10 @@ import './css/sql.css'
 import _ from 'lodash'
 import { observable, computed, configure, action } from 'mobx'
 import { observer } from 'mobx-react'
-import { Container, Loader, Dimmer, Grid, Form, Header, Button, Accordion } from 'semantic-ui-react'
+import { Divider, Loader, Dimmer, Form, Header, Button, Accordion } from 'semantic-ui-react'
 import { serversDict, datasetsDict, colorDict } from './datasets.js'
 import { FormState } from './formstate.js'
-import { OpenSeaDragonViewer } from './openseadragon';
+import { OpenSeaDragonViewer } from './openseadragon.js';
 
 configure({ enforceActions: 'observed' });
 
@@ -47,9 +47,8 @@ export class Form0State extends FormState {
 
   @computed({ keepAlive: true }) get mask() {
     if (this.catalog) {
-      const source = datasetsDict[this.catalog].mask;
-      if (source) return `/static/masks/${source}.dzi`;
-      else return 'static/tiles/dust.dzi';
+      const source = datasetsDict[this.catalog].mask || 'default';
+      return `/static/masks/${source}.dzi`;
     } else return null;
   }
 
@@ -210,7 +209,7 @@ const ClearButton = observer(() => {
 
 const Map = observer(() => {
   if (state0.mask) {
-    return (<OpenSeaDragonViewer image={state0.mask} select scalebar />);
+    return (<OpenSeaDragonViewer image={state0.mask} scalebar />);
   } else return (<></>);
 })
 
@@ -223,40 +222,31 @@ export function MyForm0(props) {
   }
 
   return (
-    <Container>
-      <Dimmer.Dimmable blurring dimmed={Boolean(wait)}>
-        <Dimmer active={Boolean(wait)} inverted >
-          <Loader inverted indeterminate content={String(wait)} />
-        </Dimmer>
-        <Grid stackable columns={2}>
-          <Grid.Column style={{ flex: "1" }}>
-            <Form>
-              <Header as='h2'>Dataset query</Header>
-              <Header as='h3' dividing>Dataset selection</Header>
-              <Form.Group>
-                <FormCatalog />
-                <FormServer />
-              </Form.Group>
-              <Form.Group>
-                <FormBands />
-                <FormMorhClass />
-              </Form.Group>
-              <Header as='h3' dividing>Filters</Header>
-              <FormFilter />
-              <Form.Field>
-                <SQLArea />
-              </Form.Field>
-              <Button as="label" htmlFor="file" icon='upload' content='Upload configuration' />
-              <input type="file" id="file" hidden onChange={(a) => alert(a)} />
-              <ClearButton />
-              <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
-                onClick={handleNext} />
-            </Form>
-          </Grid.Column>
-          <Grid.Column style={{ width: "400px" }}>
-            <Map />
-          </Grid.Column>
-        </Grid>
-      </Dimmer.Dimmable>
-    </Container>);
+    <Dimmer.Dimmable blurring dimmed={Boolean(wait)}>
+      <Dimmer active={Boolean(wait)} inverted >
+        <Loader inverted indeterminate content={String(wait)} />
+      </Dimmer>
+      <Form>
+        <Header as='h2'>Dataset query</Header>
+        <Header as='h3' dividing>Dataset selection</Header>
+        <Form.Group>
+          <FormCatalog />
+          <FormServer />
+        </Form.Group>
+        <Form.Group>
+          <FormBands />
+          <FormMorhClass />
+        </Form.Group>
+        <Header as='h3' dividing>Filters</Header>
+        <FormFilter />
+        <Form.Field>
+          <SQLArea />
+        </Form.Field>
+        <Button as="label" htmlFor="file" icon='upload' content='Upload configuration' />
+        <input type="file" id="file" hidden onChange={(a) => alert(a)} />
+        <ClearButton />
+        <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
+          onClick={handleNext} />
+      </Form>
+    </Dimmer.Dimmable>);
 }
