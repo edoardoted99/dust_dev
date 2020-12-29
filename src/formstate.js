@@ -2,27 +2,33 @@
 'use strict';
 
 import _ from 'lodash'
-import { observable, action, isObservableProp, isComputedProp, when } from 'mobx'
-import { observer } from 'mobx-react'
-
+import { observable, action, isObservableProp, isComputedProp, when, computed } from 'mobx'
 
 /// <reference path="" />
 
 /**
+ * @typedef Validator
+ * @type {function}
+ * @param {string} value - The value to validate.
+ * @returns {false|string} - If `false`, the value is valid; otherwise, return the error message.
+ */
+
+/**
  * The complete state of a reactive form.
- *
  * @export
  * @class FormState
  */
 export class FormState {
   /**
    * The list of validator functions associated to each observable.
-   * @type {Object}
+   * 
+   * The function should return `false` if the field is valid, and a string with error message otherwise.
+   * @type {{[field: string]: Validator}}
    * @memberof FormState
    * @example
    * validators = { 
-   *   name: () === '' && 'Please enter your name',
-   *   age: () > 0 && 'Your age must be positive'
+   *   name: x => x === '' && 'Please enter your name',
+   *   age: x => x > 0 && 'Your age must be positive'
    * }
    */
   validators = {};
@@ -32,16 +38,68 @@ export class FormState {
    * 
    * If `false`, no undo is possible; otherwise, it is an object with the list
    * of properties to undo, when requested.
-   * 
    * @type {false|{ [fieldName: string]: any}}
    * @memberof FormState
    */
   @observable undo = false;
 
+  /**
+   * The type of message to show at the end of the form.
+   * @type {null|''|'success'|'info'|'warning'|'error'}
+   * @memberof FormState
+   */
+  @observable messageType = null;
+
+  /**
+   * The header of the message to show at the end of the form.
+   * @type {string}
+   * @memberof FormState
+   */
+  @observable messageHeader = '';
+
+  /**
+   * The content of the message to show at the end of the form.
+   * @type {string}
+   * @memberof FormState
+   */
+  @observable messageContent = '';
+
+  /**
+   * The message properties associated to the current message.
+   * @returns {Object} The message properties, as an object.
+   * @memberof FormState
+   */
+  @computed({ keepAlive: true }) get messageProps() {
+    if (this.messageType === null)
+      return {};
+    else if (this.messageType)
+      return { [this.messageType]: true, header: this.messageHeader, content: this.messageContent };
+    else
+      return { header: this.messageHeader, content: this.messageContent };
+  }
+
+  set messageProps(props) {
+    if (!_.isEmpty(props)) {
+      this.messageType = '';
+      for (let p of ['success', 'warning', 'error', 'info'])
+        // @ts-ignore
+        if (props[p]) this.messageType = p;
+      this.messageHeader = props.header;
+      this.messageContent = props.content;
+    } else {
+      this.messageType = null;
+      this.messageHeader = this.messageContent = '';
+    }
+  }
+
+  /**
+   * The class constructor: it just inizializes all fields to null.
+   * @constructor
+   * @memberof FormState
+   */
   constructor() {
     /**
      * The initial settings of the observables.
-     * 
      * @type {{ [fieldName: string]: any}}
      */
     this._orig = this.pull();
@@ -49,19 +107,17 @@ export class FormState {
      * The list of error messages associated to each validate field.
      * @type { {[fieldName: string]: boolean|string;} }
      */
-    this.errors = observable(_.mapValues(this.validators, () => false));
+    this.errors = observable(_.mapValues(this.validators, () => null));
   }
 
   /**
    * Handle the change of an observable. 
    *
-   * @param {React.SyntheticEvent} e The event that triggered the call
-   * @param {Object} o The associated object: we read the `name`, 
-   *   and the `value` or `checked` fields.
-   * @memberof FormState
-   * 
-   * If the class has a method called `handle<name>`, this is called *before*
+   * N.B. If the class has a method called `handle<name>`, this is called *before*
    * the rest of the code.
+   * @param {React.SyntheticEvent} e - The event that triggered the call
+   * @param {Object} o - The associated object: we read the `name`, and the `value` or `checked` fields.
+   * @memberof FormState
    */
   @action.bound handleChange(e, o) {
     const { name, value, checked } = o;
@@ -76,7 +132,6 @@ export class FormState {
 
   /**
    * Return the values of all current observables.
-   *
    * @return {{ [fieldName: string]: any}} 
    * @memberof FormState
    */
@@ -100,30 +155,46 @@ export class FormState {
    * This method updates `this.errors` and lanches a series of `when` 
    * watchers for all observables with errors: this way the errors will be
    * automagically cleaned when the observable is well formed.
-   * 
    * @return {boolean} 
    * @memberof FormState
    */
   @action.bound validate() {
-    _.assign(this.errors, _.mapValues(this.validators, (f, k) => f(this[k])));
-    let cleanedErrors = _.pickBy(this.errors, (v) => v);
-    _.forEach(cleanedErrors,
-      (v, k) => when(() => !this.validators[k](this[k]), () => this.errors[k] = false));
-    return _.isEmpty(cleanedErrors);
+    let ok = true;
+    for (let v in this.validators) {
+      let validator = this.validators[v], errors = validator(this[v]);
+      this.errors[v] = errors;
+      if (_.isArray(errors) || _.isObject(errors)) {
+        for (let e in errors) {
+          if (errors[e]) {
+            when(() => !validator(this[v])[e], () => this.errors[v][e] = false);
+            ok = false;
+          }
+        }
+      } else {
+        if (errors) {
+          when(() => !validator(this[v]), () => this.errors[v] = false);
+          ok = false;
+        }
+      }
+    }
+    return ok;
   }
+
 
   /**
    * Clear all errors.
-   *
    * @memberof FormState
    */
   @action.bound clearErrors() {
-    _.assign(this.errors, _.mapValues(this.validators, () => false));
+    for (let e in this.errors) {
+      let error = this.errors[e];
+      if (_.isObject(error)) _.assign(error, _.mapValues(error, () => false));
+      else this.errors[e] = false;
+    }
   }
 
   /**
    * Perform a reset or an undo of the observables.
-   *
    * @memberof FormState
    */
   @action.bound resetOrUndo() {
@@ -137,6 +208,12 @@ export class FormState {
     }
   }
 
+  /**
+   * Return, for a given field, its `name`, `value`, `error`, and `onChange` handler.
+   * @param {string} name - The field name to obtain
+   * @returns {Object} A property list with the various fields.
+   * @memberof FormState
+   */
   props(name) {
     const value = _.get(this, name);
     const error = _.get(this.errors, name);

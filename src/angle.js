@@ -2,13 +2,36 @@
 'use strict';
 
 import _ from 'lodash'
-import { FlowCancellationError } from 'mobx';
-import { createFactory } from 'react';
 
+/**
+ * A class to save and perform operations on an Angle.
+ * @export
+ * @class Angle
+ */
 export class Angle {
+  /**
+   * The angle value, as an array of numbers (degrees, minutes, seconds).
+   * 
+   * Depending on the value length, the angle is entered as degree.fraction (length=1),
+   * degree arcmin.fraction (length=2), or degree arcmin arcsec.fraction (length=3).
+   * Hence, only the last element of this array can have fractional values.
+   * @type {number[]}
+   * @memberof Angle
+   */
   values = [0.0];
-  /** @type {'latitude'|'longitude'|'hms'} */
+  
+  /** 
+   * The angle type.
+   * @type {'latitude'|'longitude'|'hms'} 
+   * @memberof Angle
+   */
   type = 'latitude';
+
+  /**
+   * The precisioon used to display the angle, expressed as total number of digits.
+   * @type {number}
+   * @memberof Angle
+   */
   precision = 7;
 
   /**

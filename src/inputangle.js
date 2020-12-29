@@ -6,7 +6,12 @@ import React from 'react'
 import { FormField, Input, Label } from 'semantic-ui-react'
 import { Angle } from './angle.js'
 
-// Properties: value, onChange, onBlur, longitude, latitude, hms
+/**
+ * A class to allow a complex input of angle values.
+ * @export
+ * @class InputAngle
+ * @extends React.Component
+ */
 export class InputAngle extends React.Component {
   constructor(props) {
     super(props);
@@ -45,11 +50,9 @@ export class InputAngle extends React.Component {
 
   /**
    * Fix an input value according to some specific rules
-   *
    * @param {String} value The input value
    * @return {String} The fixed value
-   * @memberof InputAngle
-   * 
+   * @memberof InputAngle 
    * Allowed inputs are of the form –12° 34' 56".789, –12° 34'.567, +12°.3456.
    * For latitude fields the sign is not allowed. For hms fields the °'" are
    * relaced by ʰᵐˢ.
@@ -88,6 +91,15 @@ export class InputAngle extends React.Component {
     return sign + fixedValue;
   }
 
+  /**
+   * Handle changes of the input field, making sure it is always formated correctly.
+   * 
+   * This method calls `fixInput` to prepare the input and show it nicely, by adding
+   * angle separators.
+   * @param {React.SyntheticEvent} e - The event that raise the change
+   * @param {Object} o - The associated object
+   * @memberof InputAngle
+   */
   handleChange(e, o) {
     let { value } = o, fixedValue = this.fixInput(value);
     if (this.validate(fixedValue, true)) {
@@ -105,6 +117,11 @@ export class InputAngle extends React.Component {
     }
   }
 
+ /**
+   * Ensure an angle field is always formated correctly when blurring.
+   * @param {React.SyntheticEvent} e - The event that raise the blur
+   * @memberof InputAngle
+   */
   handleBlur(e) {
     let fixedValue = this.fixInput(this.props.value + ' ');
     if (this.props.value != fixedValue) {
@@ -113,6 +130,13 @@ export class InputAngle extends React.Component {
     if (this.props.onBlur) this.props.onBlur(e);
   }
 
+  /**
+   * Handle a conversion request.
+   * 
+   * This method is called when the use clicks the top-right corner of the input field and
+   * requests a convertions among the three formats understoods for angles.
+   * @param {React.SyntheticEvent} e - The event associated with the click.
+   */
   handleConvert(e) {
     const factors = [60, 60, 1/3600];
     const value = new Angle(this.props.value, this.props.type), numFields = value.values.length;
@@ -122,6 +146,10 @@ export class InputAngle extends React.Component {
     }
   }
 
+  /**
+   * Render the input angle.
+   * @memberof InputAngle
+   */
   render() {
     // We cannot use directly props below: the error appears in different components
     const { name, label, error } = this.props;

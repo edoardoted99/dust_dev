@@ -9,19 +9,116 @@ import { galactic2equatorial, equatorial2galactic } from './coordinates.js'
 
 configure({ enforceActions: 'observed' });
 
+/**
+ * A class for coordinate range form states.
+ * 
+ * This class makes it simple to work with forms that allow the input of coordinate ranges.
+ * The input is recognized in various coordinate systems (see `cooSys`), and as center+width
+ * or as min+max, for both the longitude and latitudes.
+ * @export
+ * @class CooFormState
+ */
 export class CooFormState extends FormState {
+  /**
+   * The chosen coordinate system: Galactic, Equatorial, or Decimal equatorial.
+   * @type {'G'|'E'|'D'}
+   * @memberof CooFormState
+   */
   @observable cooSys = 'G';
+
+  /**
+   * The object name, used with Sesame resolution.
+   * @type {string}
+   * @memberof CooFormState
+   */
   @observable object = '';
+
+  /**
+   * The type of input for the longitude.
+   * 0: undefined; 1: center and width; 2: min and max; 3: graphic input
+   * @type {0|1|2|3}
+   * @memberof CooFormState
+   */
   @observable lonType = 0;
+
+  /**
+   * The type of input for the latitude.
+   * 0: undefined; 1: center and width; 2: min and max; 3: graphic input
+   * @type {0|1|2|3}
+   * @memberof CooFormState
+   */
   @observable latType = 0;
+
+  /**
+   * The longitude center, in flexible string format.
+   * @type {string}
+   * @memberof CooFormState
+   */
   @observable lonCtr = '';
+
+  /**
+   * The latitude center, in flexible string format.
+   * @type {string}
+   * @memberof CooFormState
+   */
   @observable latCtr = '';
+
+  /**
+   * The longitude width, in flexible string format.
+   * @type {string}
+   * @memberof CooFormState
+   */
   @observable lonWdt = '';
+
+  /**
+   * The latitude width, in flexible string format.
+   * @type {string}
+   * @memberof CooFormState
+   */
   @observable latWdt = '';
+
+  /**
+   * The minimum longitude, in flexible string format.
+   * @type {string}
+   * @memberof CooFormState
+   */
   @observable lonMin = '';
+
+  /**
+   * The minimum latitude, in flexible string format.
+   * @type { string }
+   * @memberof CooFormState
+   */
   @observable latMin = '';
+
+  /**
+   * The maximum longitude, in flexible string format.
+   * @type { string }
+   * @memberof CooFormState
+   */
   @observable lonMax = '';
+
+  /**
+   * The maximum latitude, in flexible string format.
+   * @type { string }
+   * @memberof CooFormState
+   */
   @observable latMax = '';
+  // FIXME: is this necessary? @observable state = 'UNDEF';
+
+  /**
+   * The computed number of stars in this field.
+   * @type { number }
+   * @memberof CooFormState
+   */
+  @observable nstars = 0;
+
+  /**
+   * The job urls associated to the queries of this field.
+   * @type { string[] }
+   * @memberof CooFormState
+   */
+  @observable job_urls = [];
 
   validators = {
     lonCtr: x => x.length <= 1 && 'Please enter a valid coordinate',
@@ -67,6 +164,13 @@ export class CooFormState extends FormState {
   }
   set latMaxAngle(angle) { this.latMax = angle.angle; }
 
+  /**
+   * Return the area of the current field, in square degrees.
+   *
+   * @type {number}
+   * @readonly
+   * @memberof CooFormState
+   */
   @computed({ keepAlive: true }) get area() {
     let lonMin = this.lonMinAngle.degrees, lonMax = this.lonMaxAngle.degrees,
       latMin = this.latMinAngle.degrees, latMax = this.latMaxAngle.degrees;
@@ -75,6 +179,22 @@ export class CooFormState extends FormState {
       (Math.sin(latMax * Math.PI / 180.0) - Math.sin(latMin * Math.PI / 180.0)));
   }
 
+  /**
+   * Return the object density of the current field, in objects per square degree.
+   * @type {number}
+   * @readonly
+   * @memberof CooFormState
+   */
+  @computed({ keepAlive: true }) get density() {
+    return this.nstars / this.area;
+  }
+
+  /**
+   * Handle an object change event and call the SIMBAD server with the object name.
+   * @param {React.SyntheticEvent} e - The event generating the call
+   * @param {Object} o - The object associated to the event `e`
+   * @memberof CooFormState
+   */
   @action.bound handleSimbad(e, o) {
     if (this.object.match(/^\s*$/)) return;
     let xhr = new XMLHttpRequest();
@@ -113,6 +233,7 @@ export class CooFormState extends FormState {
           }
         }
         if (m) {
+          this.messageType = null;
           this.lonCtrAngle = lon;
           this.latCtrAngle = lat;
           if (size) {
@@ -131,24 +252,36 @@ export class CooFormState extends FormState {
     xhr.send();
   }
 
+  /**
+   * Return the name of the current longitude, depending on `cooSys`.
+   * @type {'galactic longitude'|'right ascension'}
+   * @readonly
+   * @memberof CooFormState
+   */
   @computed({ keepAlive: true }) get lonName() {
     return (this.cooSys === 'G') ? 'galactic longitude' : 'right ascension';
   }
 
+  /**
+   * Return the name of the current latitude, depending on `cooSys`.
+   * @type {'galactic latitude'|'declination'}
+   * @readonly
+   * @memberof CooFormState
+   */
   @computed({ keepAlive: true }) get latName() {
     return (this.cooSys === 'G') ? 'galactic latitude' : 'declination';
   }
 
   /**
- * Convert center+width angles into min+max angles
- *
- * @param {String} ctr The central angle
- * @param {String} wdt The width angle
- * @param {'longitude'|'latitude'|'hms'} type The coordinate type
- * @return {String[]} An array with the minimum and maximum angles
- * @memberof MyForm1
- */
-  cw2mm(ctr, wdt, type) {
+   * Convert center+width angles into min+max angles
+   *
+   * @param {String} ctr The central angle
+   * @param {String} wdt The width angle
+   * @param {'longitude'|'latitude'|'hms'} type The coordinate type
+   * @return {String[]} An array with the minimum and maximum angles
+   * @memberof CooFormState
+   */
+    cw2mm(ctr, wdt, type) {
     if (ctr === '' || wdt === '') return ['', ''];
     const ctrAngle = new Angle(ctr, type), wdtAngle = new Angle(wdt);
     return _.map(ctrAngle.scaleAdd(wdtAngle, [-0.5, 0.5], [1, 1]), a => a.angle);
@@ -156,7 +289,6 @@ export class CooFormState extends FormState {
 
   /**
    * Convert min+max angles into center+width angle
-   *
    * @param {String} min The central angle
    * @param {String} max The width angle
    * @param {'longitude'|'latitude'|'hms'} type The coordinate type
@@ -174,6 +306,12 @@ export class CooFormState extends FormState {
     return _.map(resAngle, a => a.angle);
   }
 
+  /**
+   * Handle a change event in any of the coordinate fields.
+   * @param {React.SyntheticEvent} e - The event generating the call
+   * @param {Object} o - The object associated to the event `e`
+   * @memberof CooFormState
+   */
   @action.bound handleLinkedChange(e, { name, value }) {
     const lonlat = name.substr(0, 3), rest = name.substr(3), isCorner = name[3] === 'M';
     const type = (lonlat === 'lat') ? 'latitude' : ((this.cooSys === 'E') ? 'hms' : 'longitude');
@@ -192,9 +330,16 @@ export class CooFormState extends FormState {
       this[lonlat + 'Min'] = min;
       this[lonlat + 'Max'] = max;
     }
+    this.messageType = null;
     this.handleChange(e, { name, value });
   }
 
+  /**
+   * Handle a change coordinate system event.
+   * @param {React.SyntheticEvent} e - The event generating the call
+   * @param {Object} o - The object associated to the event `e`
+   * @memberof CooFormState
+   */
   @action.bound handleCooSys(e, { name, value }) {
     const frames = { 'G': 'g', 'E': 'e', 'D': 'e', '': '' };
     const srcType = (this.cooSys === 'E') ? 'hms' : 'longitude';
@@ -207,6 +352,7 @@ export class CooFormState extends FormState {
           this[field] = (new Angle(this[field], dstType))
             .scale$((value === 'E') ? (1.0 / 15.0) : 15).angle;
     } else {
+      this.messageType = null;
       if (this.lonCtr === '' || this.latCtr === '') {
         // One field is missing: clear everything!
         const fields = ['lonCtr', 'latCtr', 'lonMin', 'lonMax', 'latMin', 'latMax'];
@@ -241,9 +387,15 @@ export class CooFormState extends FormState {
     }
   }
 
+  /**
+   * Copy the relevant fields from another `CooFormState`.
+   * @param {CooFormState} orig - The object to copy from.
+   * @memberof CooFormState
+   */
   @action.bound copyFrom(orig) {
     for (let field of ['cooSys', 'lonType', 'latType', 'lonCtr', 'latCtr', 'lonWdt', 'latWdt',
-      'lonMin', 'latMin', 'lonMax', 'latMax'])
-      this[field] = orig[field];
+      'lonMin', 'latMin', 'lonMax', 'latMax', 'messageType', 'messageHeader', 'messageContent',
+      'nstars', 'job_urls'])
+      this[field] = _.clone(orig[field]);
   }
 }

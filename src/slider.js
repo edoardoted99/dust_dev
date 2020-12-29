@@ -6,6 +6,19 @@ import _ from 'lodash'
 import { Progress } from 'semantic-ui-react'
 import './slider.css'
 
+/**
+ * A functional component to display a slider.
+ * 
+ * The component is based on the `Semantic` `progress`-bar, with the addition of click events.
+ * @param {Object} props - The full property list
+ * @param {number} props.min - The minimum allowed value
+ * @param {number} props.max - The maximum allowed value
+ * @param {number} [props.step=1] - The step size
+ * @param {number} props.value - The current value
+ * @param {function=} props.onChange - Callback called on change events
+ * @param {('tiny'|'small'|'medium'|'big')=} props.size - The requested size
+ * @param {import('semantic-ui-react').SemanticCOLORS=} props.color - The slider's color
+ */
 export const Slider = (props) => {
   const slideRef = React.useRef(null);
   const { min, max, step, value } = props;
