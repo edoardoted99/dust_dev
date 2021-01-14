@@ -6,7 +6,7 @@ import React from 'react'
 import _ from 'lodash'
 import { observable, computed, configure, action } from 'mobx'
 import { observer } from "mobx-react"
-import { Container, Loader, Dimmer, Grid, Form, Header, Button, FormField, Input, Label, Accordion, Icon, Select } from 'semantic-ui-react'
+import { Container, Loader, Dimmer, Form, Header, Button, FormField, Input, Label, Accordion, Icon, Select, Message } from 'semantic-ui-react'
 import { InputAngle } from './inputangle.js'
 import { FormState } from './formstate.js'
 import { Slider } from './slider.js'
@@ -18,6 +18,8 @@ configure({ enforceActions: 'observed' });
 
 export class Form3State extends FormState {
   state1 = null;
+  state2 = null;
+  @observable state = 'UNDEF';
   @observable products = ['XNICEST map'];
   @observable naxis1 = '';
   @observable naxis2 = '';
@@ -38,7 +40,7 @@ export class Form3State extends FormState {
   @observable clipping = '3.0';
   @observable clipIters = 3;
 
-  validators = {
+validators = {
     products: x => (x.length < 1) && 'Select at least one product',
     naxis1: x => !(x > 0 && x < 10000 && _.isInteger(parseFloat(x))) && 'Please enter a positive integer',
     naxis2: x => !(x > 0 && x < 10000 && _.isInteger(parseFloat(x))) && 'Please enter a positive integer',
@@ -46,12 +48,16 @@ export class Form3State extends FormState {
     crpix2: x => !(x > -10000 && x < 10000) && 'Please enter a valid number',
     crval1: x => (x.length <= 1) && 'Please enter a valid number',
     crval2: x => (x.length <= 1) && 'Please enter a valid number',
-    scale: x => !(_.isFinite(parseFloat(x)) && x > 0) && 'Please enter a valid number',
-    rot: x => !(x >= -180 && x <= 360) && 'Please enter a valid rotation',
+    scaleArcsec: x => !(_.isFinite(parseFloat(x)) && x > 0) && 'Please enter a valid number',
+    crota2: x => !(x >= -180 && x <= 360) && 'Please enter a valid rotation',
     lonpole: x => !(x >= -180 && x <= 360) && 'Please enter a valid longitude',
     latpole: x => !(x >= -90 && x <= 90) && 'Please enter a valid latitude',
-    spoothpar: x => !(x >= 0.1 && x <= 10) && 'Please enter a valid number',
+    smoothpar: x => !(x >= 0.1 && x <= 10) && 'Please enter a valid number',
     clipping: x => !(x >= 1 && x <= 10) && 'Please enter a valid number',
+    pv2: xs => _.map(xs, x => !(x === '' || (x > -10000 && x < 10000)) && 'The coefficient, if present, must be a valid number'),
+    // Empty validators
+    cooSys: x => false,
+    clipIters: x => false
   }
 
   @computed({ keepAlive: true }) get scale () {
@@ -102,7 +108,9 @@ export class Form3State extends FormState {
         40, 30, 24,
         20, 15, 12,
         10, 7.5, 6,
-        5, 4, 3];
+        5, 4, 3,
+        2.5, 2, 1.5,
+        1.25, 1];
       this.scaleArcsec = _.minBy(goodScales, x => Math.abs(value * 3600 * 3600 - this.state1.density * x * x));
     } else {
       this.scaleArcsec = Math.sqrt(value / this.state1.density) * 3600;
@@ -132,11 +140,11 @@ export class Form3State extends FormState {
       'NAXIS1': parseInt(this.naxis1),
       'NAXIS2': parseInt(this.naxis2),
       'CTYPE1': types[0] + '-' + this.projection,
-      'CRPIX1': parseInt(this.crpix1),
+      'CRPIX1': parseFloat(this.crpix1),
       'CDELT1': -this.scaleArcsec / 3600.0,
       'CRVAL1': (new Angle(this.crval1, 'longitude')).degrees,
       'CTYPE2': types[1] + '-' + this.projection,
-      'CRPIX2': parseInt(this.crpix2),
+      'CRPIX2': parseFloat(this.crpix2),
       'CDELT2': this.scaleArcsec / 3600.0,
       'CRVAL2': (new Angle(this.crval2, 'latitude')).degrees,
       'EQUINOX': 2000.0
@@ -222,6 +230,7 @@ export class Form3State extends FormState {
 }
 
 export const state3 = new Form3State();
+state3.step = 3;
 
 const projectionTypes = [
   { value: 'AZP', text: 'AZP: zenithal/azimuthal perspective' },
@@ -394,11 +403,19 @@ const ClearButton = observer(() => {
     state3.resetOrUndo();
     if (state3.undo) state3.setDefault();
   }
-
   return (
     <Button style={{ width: "110px" }} icon={state3.undo ? 'undo' : 'delete'} content={state3.undo ? 'Undo' : 'Clear'}
       color={state3.undo ? 'green' : 'red'} onClick={handleClick} />
   );
+});
+
+const FormMessage = observer(() => {
+  if (state3.state1.job_urls.length > 0 && state3.state2.job_urls.length > 0) {
+    return (state3.messageType === null) ? <></> : <Message {...state3.messageProps} />
+  } else {
+    return <Message info header='Waiting' content={'The database queries are not ready yet: you will be able to ' +
+      'start the processing as soon as the queries are initiated.'} />
+  }
 });
 
 export const FormSVG = observer((props) => {
@@ -466,13 +483,37 @@ export const FormSVG = observer((props) => {
 })
 
 export function MyForm3(props) {
-  const [wait, setWait] = React.useState(false);
+  const [wait, setWait] = React.useState('');
   const [advanced, setAdvanced] = React.useState(false);
 
-  function handleNext(e) {
+  const handleNext = action((e) => {
     e.preventDefault();
-    if (state3.validate()) props.onNext(e);
-  }
+    if (state3.validate()) {
+      const axios = require('axios').default;
+      state3.messageType = 'info';
+      state3.messageHeader = 'Connection';
+      state3.messageContent = 'Connecting to the server to launch the pipeline...';
+      setWait('Requesting pipeline processing...');
+      axios
+        .post('/app/process', {
+          data: props.pipelineData(),
+          step: 3
+        }, { timeout: 30000 })
+        .then(action(response => {
+          setWait('');
+          console.log(response.data);
+          state3.messageProps = response.data.message;
+          if (state3.messageType === 'success') props.onNext(e)
+        }))
+        .catch(action(error => {
+          setWait('');
+          console.log(error);
+          state3.messageType = 'error';
+          state3.messageHeader = 'Server error';
+          state3.messageContent = 'Could not establish a connectiong with the server. Try again later.';
+        }));
+    }
+  });
 
   function handleBack(e) {
     e.preventDefault();
@@ -579,8 +620,11 @@ export function MyForm3(props) {
             onClick={handleBack} />
           <ClearButton />
           <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
-            onClick={handleNext} />
+            onClick={handleNext} disabled={state3.state1.job_urls.length == 0 || state3.state2.job_urls.length == 0} />
+          <Button icon='help' toggle floated='right' />
+          <Button icon='download' floated='right' onClick={props.downloader} />
         </Form>
+        <FormMessage />
       </Dimmer.Dimmable>
     </Container>);
 }

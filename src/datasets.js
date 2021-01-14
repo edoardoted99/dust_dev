@@ -9,15 +9,25 @@ import logo2MASS from 'url:./logos/2MASS.png';
 // @ts-ignore
 import logoEmpty from 'url:./logos/empty.png';
 
+/**
+ * @constant
+ * @exports
+ * @type {object}
+ */
 export const serversDict = {
+  VizieRTAP: {
+    description: 'VizieR (TAP)',
+    server: 'http://TAPVizieR.u-strasbg.fr/TAPVizieR/tap/',
+    image: logoVizier
+  },
   VizieR: {
     description: 'VizieR',
-    TAP: 'http://TAPVizieR.u-strasbg.fr/TAPVizieR/tap/',
+    server: 'vizier',
     image: logoVizier
   },
   IRSA: {
     description: 'IRSA',
-    TAP: 'https://irsa.ipac.caltech.edu/TAP',
+    server: 'https://irsa.ipac.caltech.edu/TAP',
     image: logoIRSA
   }
 };
@@ -26,21 +36,33 @@ export const datasetsDict = {
   '2MASS-PSC': {
     description: '2MASS Point Source Catalog',
     image: logo2MASS,
-    servers: ['VizieR', 'IRSA'],
+    servers: ['VizieR', 'VizieRTAP', 'IRSA'],
     catalogs: {
-      VizieR: 'II/246',
+      VizieR: 'II/246/out',
+      VizieRTAP: '"II/246/out"',
       IRSA: 'fp_psc'
     },
     coords: {
-      VizieR: ['RAJ2000', 'DEJ2000'],
-      IRSA: ['ra', 'dec']
-    },
-    gal_coords: {
-      VizieR: ['GLON', 'GLAT'],
-      IRSA: ['glon', 'glat']
+      VizieR: {
+        E: ['RAJ2000', 'DEJ2000'],
+        G: ['GLON', 'GLAT']
+      },
+      VizieRTAP: {
+        E: ['RAJ2000', 'DEJ2000'],
+        G: ['GLON', 'GLAT']
+      },
+      IRSA: {
+        E: ['ra', 'dec'],
+        G: ['glon', 'glat']
+      }
     },
     bands: {
       VizieR: [
+        ['J', 'Jmag', 'e_Jmag', 2.55],
+        ['H', 'Hmag', 'e_Hmag', 1.55],
+        ['Ks', 'Kmag', 'e_Kmag', 1.00]
+      ],
+      VizieRTAP: [
         ['J', 'Jmag', 'e_Jmag', 2.55],
         ['H', 'Hmag', 'e_Hmag', 1.55],
         ['Ks', 'Kmag', 'e_Kmag', 1.00]
@@ -54,7 +76,8 @@ export const datasetsDict = {
     classes: [],
     extra: [],
     extra_robust: {
-      VizieR: [['Cflg', '=', "'000'"], ['Xflg', '=', '0'], ['Aflg', '=', '0']],
+      VizieR: [['Cflg', '==', "000"], ['Xflg', '=', '0'], ['Aflg', '=', '0']],
+      VizieRTAP: [['Cflg', '=', "'000'"], ['Xflg', '=', '0'], ['Aflg', '=', '0']],
       IRSA: [['cc_flg', '=', "'000'"], ['gal_contam', '=', '0'], ['mp_flg', '=', '0']]
     }
   },
@@ -64,18 +87,20 @@ export const datasetsDict = {
     servers: ['VizieR'],
     mask: 'VISION',
     catalogs: ['"J/A+A/587/A153/science"', '"J/A+A/587/A153/control"'],
-    coords: ['RAJ2000', 'DEJ2000'],
+    coords: {
+      E: ['RAJ2000', 'DEJ2000']
+    },
     bands: [
       ['J', 'Jmag', 'e_Jmag', 2.55],
       ['H', 'Hmag', 'e_Hmag', 1.55],
-      ['Ks', 'Kmag', 'e_Kmag', 1.00]
+      ['Ks', 'Ksmag', 'e_Ksmag', 1.00]
     ],
     classes: [
       ['ClassSex', 'ClassSex', 'star', 'galaxy'],
       ['ClassCog', 'ClassCog', 'galaxy', 'star']
     ],
     extra: [],
-    extra_robust: [['qflag', '=', '0']]
+    extra_robust: []
   }
 };
 

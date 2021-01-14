@@ -104,7 +104,6 @@ export class CooFormState extends FormState {
    * @memberof CooFormState
    */
   @observable latMax = '';
-  // FIXME: is this necessary? @observable state = 'UNDEF';
 
   /**
    * The computed number of stars in this field.
@@ -120,6 +119,14 @@ export class CooFormState extends FormState {
    */
   @observable job_urls = [];
 
+  /**
+   * An object containing information on the ADQL query; see `get adqlComponents` in form0.
+   * @memberof CooFormState
+   */
+  adqlComponents = {};
+
+  cachedCheck = {};
+
   validators = {
     lonCtr: x => x.length <= 1 && 'Please enter a valid coordinate',
     latCtr: x => x.length <= 1 && 'Please enter a valid coordinate',
@@ -128,7 +135,81 @@ export class CooFormState extends FormState {
     lonMin: x => x.length <= 1 && 'Please enter a valid coordinate',
     latMin: x => x.length <= 1 && 'Please enter a valid coordinate',
     lonMax: x => x.length <= 1 && 'Please enter a valid coordinate',
-    latMax: x => x.length <= 1 && 'Please enter a valid coordinate'
+    latMax: x => x.length <= 1 && 'Please enter a valid coordinate',
+    // Empty validators
+    cooSys: x => false,
+    object: x => false,
+    lonType: x => false,
+    latType: x => false
+  };
+
+  cooValidate() {
+    const keys = ['lonCtr', 'latCtr', 'lonWdt', 'latWdt', 'lonMin', 'latMin', 'lonMax', 'latMax'];
+    for (let k of keys)
+      if (this.validators[k](this[k])) return false;
+    return true;
+  }
+
+  @action setMessage(delay = 500, startQuery = false, cbStart = null, cbSuccess = null, cbFail = null) {
+    const axios = require('axios').default;
+    const keys = ['lonCtr', 'latCtr', 'lonWdt', 'latWdt', 'lonMin', 'latMin', 'lonMax', 'latMax', 'coo_sys', 'step'];
+    let skipWait = false;
+    if (this.cooValidate()) {
+      // Check if the call is a duplicated one
+      if (this.timeout === null && _.isEqual(_.pick(this, keys), this.cachedCheck)) {
+        if (this.messageType === 'success') skipWait = true;
+        else return;
+      } else this.cachedCheck = _.pick(this, keys);
+      if (!skipWait) {
+        this.messageType = 'info';
+        this.messageHeader = 'Checking selected area';
+        this.messageContent = 'Estimating the number of objects in the selected area...';
+        if (cbStart) cbStart();
+      }
+      if (this.timeout) clearTimeout(this.timeout);
+      this.timeout = setTimeout(action(() => {
+        this.timeout = null;
+        axios
+          .post('/app/count_stars', {
+            ...this.adqlComponents,
+            lon_ctr: this.lonCtrAngle.degrees,
+            lon_wdt: this.lonWdtAngle.degrees,
+            lat_ctr: this.latCtrAngle.degrees,
+            lat_wdt: this.latWdtAngle.degrees,
+            lon_min: this.lonMinAngle.degrees,
+            lon_max: this.lonMaxAngle.degrees,
+            lat_min: this.latMinAngle.degrees,
+            lat_max: this.latMaxAngle.degrees,
+            coo_sys: this.cooSys === 'D' ? 'E' : this.cooSys,
+            step: this.step,
+            start_query: startQuery
+          }, { timeout: 30000 })
+          .then(action(response => {
+            this.nstars = response.data.nstars;
+            this.job_urls = response.data.job_urls;
+            if (!skipWait) {
+              this.messageProps = response.data.message;
+              if (this.messageType === 'success') {
+                if (cbSuccess) cbSuccess(response.data);
+              } else {
+                if (cbFail) cbFail(response.data);
+              }
+            }
+          }))
+          .catch(action(error => {
+            console.log(error);
+            this.messageType = 'error';
+            this.messageHeader = 'Server error';
+            this.messageContent = 'Could not establish a connectiong with the server. Try again later.';
+            if (cbFail) cbFail(error);
+          }));
+      }), delay);
+    } else {
+      this.messageType = null;
+      this.messageHeader = 'Warning';
+      this.messageContent = 'Please fill all the coordinate data.';
+    }
+    if (skipWait && cbSuccess) cbSuccess();
   }
 
   @computed({ keepAlive: true }) get lonCtrAngle() {
@@ -233,7 +314,6 @@ export class CooFormState extends FormState {
           }
         }
         if (m) {
-          this.messageType = null;
           this.lonCtrAngle = lon;
           this.latCtrAngle = lat;
           if (size) {
@@ -245,6 +325,7 @@ export class CooFormState extends FormState {
           this.errors.object = false;
           this.handleLinkedChange(e, { name: 'lonWdt', value: this.lonWdt });
           this.handleLinkedChange(e, { name: 'latWdt', value: this.latWdt });
+          this.setMessage();
         } else this.errors.object = 'Simbad could not resolve this object name';
       } else this.errors.object = 'Connection error to Simbad';
     });
@@ -330,8 +411,8 @@ export class CooFormState extends FormState {
       this[lonlat + 'Min'] = min;
       this[lonlat + 'Max'] = max;
     }
-    this.messageType = null;
     this.handleChange(e, { name, value });
+    this.setMessage();
   }
 
   /**
@@ -352,7 +433,6 @@ export class CooFormState extends FormState {
           this[field] = (new Angle(this[field], dstType))
             .scale$((value === 'E') ? (1.0 / 15.0) : 15).angle;
     } else {
-      this.messageType = null;
       if (this.lonCtr === '' || this.latCtr === '') {
         // One field is missing: clear everything!
         const fields = ['lonCtr', 'latCtr', 'lonMin', 'lonMax', 'latMin', 'latMax'];
@@ -385,6 +465,7 @@ export class CooFormState extends FormState {
         }
       }
     }
+    this.setMessage();
   }
 
   /**

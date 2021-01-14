@@ -1,19 +1,18 @@
 // @ts-check
 'use strict';
 
-import React from 'react'
+import React, { useState } from 'react'
 
 import './css/sql.css'
 import _ from 'lodash'
 import { observable, computed, configure, action } from 'mobx'
 import { observer } from 'mobx-react'
-import { Divider, Loader, Dimmer, Form, Header, Button, Accordion } from 'semantic-ui-react'
+import { Loader, Dimmer, Form, Header, Button, Accordion, Message } from 'semantic-ui-react'
 import { serversDict, datasetsDict, colorDict } from './datasets.js'
 import { FormState } from './formstate.js'
-import { OpenSeaDragonViewer } from './openseadragon.js';
+
 
 configure({ enforceActions: 'observed' });
-
 
 export class Form0State extends FormState {
   @observable catalog = '';
@@ -25,7 +24,10 @@ export class Form0State extends FormState {
   validators = {
     catalog: x => x === '' && 'Please select a catalog',
     server: x => x === '' && 'Please select a server',
-    bandlist: x => (x.length < 2) && 'At least two bands are required'
+    bandlist: x => (x.length < 2) && 'At least two bands are required',
+    // Empty validators
+    morphclass: x => false,
+    filter: x => false
   }
 
   catalogs = _.map(datasetsDict,
@@ -33,6 +35,7 @@ export class Form0State extends FormState {
   );
 
   @action.bound handleCatalog(e, { value }) {
+    this.messageType = null;
     if (value) {
       let catalog = datasetsDict[value];
       let allowedServers = catalog.servers;
@@ -43,6 +46,10 @@ export class Form0State extends FormState {
       this.bandlist = _.map(bands, (v) => v[0]);
       this.morphclass = '';
     }
+  }
+
+  @action.bound handleServer() {
+    this.messageType = null;
   }
 
   @computed({ keepAlive: true }) get mask() {
@@ -58,18 +65,11 @@ export class Form0State extends FormState {
   }
 
   @computed({ keepAlive: true }) get coords() {
-    let result = []
     if (this.catalog && this.server) {
       let coords = datasetsDict[this.catalog].coords;
-      if (_.isPlainObject(coords)) coords = coords[this.server];
-      result.push(...coords);
-      coords = datasetsDict[this.catalog].gal_coords;
-      if (coords) {
-        if (_.isPlainObject(coords)) coords = coords[this.server];
-        if (coords) result.push(...coords);
-      }
-    }
-    return result;
+      if (this.server in coords) coords = coords[this.server];
+      return coords;
+    } else return {};
   }
 
   @computed({ keepAlive: true }) get bandsWithFields() {
@@ -114,29 +114,51 @@ export class Form0State extends FormState {
     return _.map(this.bandlist, b => this.bandsWithFields.reddeningLaw[b]);
   }
 
-  @computed({ keepAlive: true }) get adql() {
-    let fields = [], extra, conditions = [];
+  @computed({ keepAlive: true }) get filterDisabled() {
     if (this.catalog && this.server) {
-      let catalogQuery = datasetsDict[this.catalog].catalogs;
-      if (_.isPlainObject(catalogQuery)) catalogQuery = catalogQuery[this.server];
-      if (Array.isArray(catalogQuery)) catalogQuery = catalogQuery.join(', ')
-      fields = [].concat(this.coords);
-      fields = fields.concat(_.flatMap(this.bandlist, b => this.bandsWithFields.fields[b]));
-      if (this.morphclass) fields.push(this.morphclassesWithFields.fields[this.morphclass]);
-      extra = datasetsDict[this.catalog].extra;
+      let extra = datasetsDict[this.catalog].extra_robust
       if (_.isPlainObject(extra)) extra = extra[this.server];
+      return extra.length === 0;
+    } else return true;
+  }
+
+  @computed({ keepAlive: true }) get adqlComponents() {
+    let fields = [], mags = [], magErrs = [], morphclass = null, extra, conditions = [];
+    if (this.catalog && this.server) {
+      let server = this.server, dataset = this.catalog, coords = this.coords;
+      let catalogs = datasetsDict[dataset].catalogs;
+      if (_.isPlainObject(catalogs)) catalogs = catalogs[server];
+      if (!Array.isArray(catalogs)) catalogs = [catalogs];
+      fields = [].concat(...Object.values(coords));
+      mags = _.map(this.bandlist, b => this.bandsWithFields.fields[b][0]);
+      magErrs = _.map(this.bandlist, b => this.bandsWithFields.fields[b][1]);
+      fields = fields.concat(_.flatMap(this.bandlist, b => this.bandsWithFields.fields[b]));
+      if (this.morphclass) {
+        morphclass = this.morphclassesWithFields.fields[this.morphclass];
+        fields.push(morphclass);
+      }
+      extra = datasetsDict[dataset].extra;
+      if (_.isPlainObject(extra)) extra = extra[server];
       conditions.push(...extra);
       if (this.filter) {
-        extra = datasetsDict[this.catalog].extra_robust
-        if (_.isPlainObject(extra)) extra = extra[this.server];
+        extra = datasetsDict[dataset].extra_robust
+        if (_.isPlainObject(extra)) extra = extra[server];
         conditions.push(...extra);
       }
+      let serverURL = serversDict[server].server;
+      return { server: serverURL, dataset, catalogs, fields, conditions, coords, mags, magErrs, morphclass };
+    } else return null;
+  }
+
+  @computed({ keepAlive: true }) get adql() {
+    if (this.catalog && this.server) {
+      let { fields, catalogs, conditions } = this.adqlComponents;
       return (
         <div>
           <span className="sql-reserved">SELECT </span>
           {fields.map((f) => <span className="sql-field">{f}</span>)
             .reduce((acc, f) => (acc === null) ? f : <>{acc}, {f}</>)}<br />
-          <span className="sql-reserved">FROM</span> {catalogQuery}
+          <span className="sql-reserved">FROM</span> {catalogs.join(', ')}
           {conditions.length ? <><br />
             <span className="sql-reserved">WHERE </span>
             {conditions.map((c, _) => <><span className="sql-field">{c[0]}</span>
@@ -183,7 +205,8 @@ const FormMorhClass = observer((props) => {
 
 const FormFilter = observer((props) => {
   return (
-    <Form.Checkbox name='filter' checked={state0.filter} label='Filter spurious sources'
+    <Form.Checkbox name='filter' checked={state0.filter && (!state0.filterDisabled)}
+      disabled={state0.filterDisabled} label='Filter spurious sources'
       onChange={state0.handleChange} {...props} />
   );
 });
@@ -207,26 +230,48 @@ const ClearButton = observer(() => {
   );
 });
 
-const Map = observer(() => {
-  if (state0.mask) {
-    return (<OpenSeaDragonViewer image={state0.mask} scalebar />);
-  } else return (<></>);
-})
+const FormMessage = observer(() => {
+  return (state0.messageType === null) ? <></> : <Message {...state0.messageProps} />;
+});
 
 export function MyForm0(props) {
-  const [wait, setWait] = React.useState(false);
+  const [wait, setWait] = useState('');
 
-  function handleNext(e) {
+  const checkServer = action((e) => {
+    e.preventDefault();
+    if (state0.validate()) {
+      // Check if the server is responding within 30 seconds
+      const axios = require('axios').default;
+      state0.messageType = 'info';
+      state0.messageHeader = 'Checking server';
+      state0.messageContent = 'The server is being contacted...';
+      axios
+        .post('/app/ping_server', state0.adqlComponents, { timeout: 30000 })
+        .then(action(response => {
+          state0.messageProps = response.data;
+        }))
+        .catch(action(error => {
+          console.log(error);
+          state0.messageType = 'error';
+          state0.messageHeader = 'Server down';
+          state0.messageContent = 'The server is not responding: please select a different server.';
+        }));
+    }
+  })
+
+  const handleNext = action((e) => {
     e.preventDefault();
     if (state0.validate()) props.onNext(e);
-  }
+  });
 
   return (
-    <Dimmer.Dimmable blurring dimmed={Boolean(wait)}>
-      <Dimmer active={Boolean(wait)} inverted >
-        <Loader inverted indeterminate content={String(wait)} />
+    <>
+      <Dimmer active={Boolean(wait)} page>
+        <Header as='h2' inverted>
+          <Loader inverted indeterminate content={String(wait)} />
+        </Header>
       </Dimmer>
-      <Form>
+      <Form >
         <Header as='h2'>Dataset query</Header>
         <Header as='h3' dividing>Dataset selection</Header>
         <Form.Group>
@@ -242,11 +287,15 @@ export function MyForm0(props) {
         <Form.Field>
           <SQLArea />
         </Form.Field>
-        <Button as="label" htmlFor="file" icon='upload' content='Upload configuration' />
-        <input type="file" id="file" hidden onChange={(a) => alert(a)} />
+
+        <Button icon='phone' content='Check server' onClick={checkServer} />
         <ClearButton />
         <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
           onClick={handleNext} />
+        <Button icon='help' toggle floated='right' />
+        <Button as='label' htmlFor='file' icon='upload' floated='right' />
+        <input type='file' id='file' hidden onChange={props.uploader} />
       </Form>
-    </Dimmer.Dimmable>);
+      <FormMessage />
+    </>);
 }

@@ -4,26 +4,16 @@
 import React from 'react'
 
 import _ from 'lodash'
-import { observable, configure, computed } from 'mobx'
+import { configure, action } from 'mobx'
 import { observer } from "mobx-react"
-import { Container, Loader, Dimmer, Divider, Form, Header, Button } from 'semantic-ui-react'
+import { Container, Loader, Dimmer, Message, Form, Header, Button, Icon, IconGroup } from 'semantic-ui-react'
 import { InputAngle } from './inputangle.js'
 import { CooFormState } from './cooform.js'
-import { OpenSeaDragonViewer } from './openseadragon';
-
 
 configure({ enforceActions: 'observed' });
 
-export class Form1State extends CooFormState {
-  @observable mask = '';
-  @observable nstars = 1e6;
-
-  @computed({ keepAlive: true }) get density() {
-    return this.nstars / this.area;
-  }
-}
-
-export const state1 = new Form1State();
+export const state1 = new CooFormState();
+state1.step = 1;
 
 const FormCooSys = observer((props) => {
   return (
@@ -41,7 +31,7 @@ const FormCooSys = observer((props) => {
 const FormSymbad = observer((props) => {
   return (
     <Form.Input label='Object name (Simbad resolved)' action='Search' placeholder='object name' width={16}
-      onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && state1.handleSimbad()}
+      onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && state1.handleSimbad(e)}
       {...state1.props('object')} onBlur={state1.handleSimbad} {...props} />);
 });
 
@@ -59,17 +49,22 @@ const ClearButton = observer(() => {
   );
 });
 
-const Map = observer(() => {
-  return (<OpenSeaDragonViewer id='osd' image={state1.mask} select scalebar cooform={state1} />);
-})
+const FormMessage = observer(() => {
+  return (state1.messageType === null) ? <></> : <Message {...state1.messageProps} />;
+});
 
 export const MyForm1 = observer((props) => {
-  const [wait] = React.useState(false);
+  const [wait, setWait] = React.useState('');
+  const [waitIcon, setWaitIcon] = React.useState('');
 
-  function handleNext(e) {
+  const handleNext = action((e) => {
     e.preventDefault();
-    if (state1.validate()) props.onNext(e);
-  }
+    if (state1.validate()) {
+      state1.setMessage(0, true, null, () => {
+        props.onNext(e);
+      });
+    }
+  });
 
   function handleBack(e) {
     e.preventDefault();
@@ -78,16 +73,24 @@ export const MyForm1 = observer((props) => {
 
   return (
     <Container>
-      <Dimmer.Dimmable blurring dimmed={Boolean(wait)}>
-        <Dimmer active={Boolean(wait)} inverted >
-          <Loader inverted indeterminate content={String(wait)} />
+      <>
+        <Dimmer active={Boolean(waitIcon)} page
+          onClick={(e) => {
+            if (waitIcon !== 'spinner') setWaitIcon('');
+            if (waitIcon === 'check') props.onNext(e);
+          }}>
+          <Header as='h3' icon inverted>
+            <Icon // @ts-ignore
+              name={waitIcon} loading={waitIcon === 'spinner'} />
+            {String(wait)}
+          </Header>
         </Dimmer>
         <Form autoComplete='off'>
           <Header as='h2'>Area selection</Header>
-                  All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
-                  , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left
-                  using the selection button (the square).
-                <Header as='h3' dividing>Coordinate system</Header>
+            All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
+            , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left
+            using the selection button (the square).
+          <Header as='h3' dividing>Coordinate system</Header>
           <FormCooSys onChange={state1.handleChange} />
           <Header as='h3' dividing>Rectangular selection: center and widths</Header>
           <FormSymbad />
@@ -125,8 +128,11 @@ export const MyForm1 = observer((props) => {
           <ClearButton />
           <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
             onClick={handleNext} />
+          <Button icon='help' toggle floated='right' />
+          <Button icon='download' floated='right' onClick={props.downloader}/>
         </Form>
-      </Dimmer.Dimmable>
+        <FormMessage />
+      </>
     </Container>);
 });
 

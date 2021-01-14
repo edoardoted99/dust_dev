@@ -4,17 +4,15 @@
 import React from 'react'
 
 import _ from 'lodash'
-import { observable, configure } from 'mobx'
+import { observable, action, configure } from 'mobx'
 import { observer } from "mobx-react"
-import { Container, Loader, Dimmer, Grid, Form, Header, Button, FormField, Input, Label } from 'semantic-ui-react'
+import { Container, Icon, Dimmer, Message, Form, Header, Button, FormField, Input, Label } from 'semantic-ui-react'
 import { InputAngle } from './inputangle.js'
 import { CooFormState } from './cooform.js'
-import { OpenSeaDragonViewer } from './openseadragon.js';
 
 configure({ enforceActions: 'observed' });
 
 export class Form2State extends CooFormState {
-  @observable mask = '';
   @observable areaFraction = 50;
   @observable starFraction = 50;
   @observable reddeningLaw = [1.0];
@@ -35,11 +33,46 @@ export class Form2State extends CooFormState {
     latMax: x => x === '' && 'Please enter a valid coordinate',
     areaFraction: x => !(x > 1 && x < 100) && 'The percentage must be between 1 and 100',
     starFraction: x => !(x > 1 && x < 100) && 'The percentage must be between 1 and 100',
-    maxExtinction: x => !(x > 0 && x < 10) && 'The maximum extinction must be between 0 and 10'
+    maxExtinction: x => !(x > 0 && x < 10) && 'The maximum extinction must be between 0 and 10',
+    reddeningLaw: xs => _.map(xs, x => !(x > 0 && x < 100) && 'The coefficient must be between 0 and 100'),
+    // Empty validators
+    cooSys: x => false,
+    object: x => false,
+    lonType: x => false,
+    latType: x => false,
+    numComponents: x => false,
+    extinctionSteps: x => false,
+    extinctionSubsteps: x => false
+  };
+
+  @action.bound guessWCS() {
+    let lonMin = this.lonMinAngle.degrees, lonMax = this.lonMaxAngle.degrees,
+      latMin = this.latMinAngle.degrees, latMax = this.latMaxAngle.degrees;
+    const starsPerPixel = 10;
+    if (lonMin > lonMax) lonMin -= 360;
+    let crval1 = (lonMin + lonMax) * 0.5;
+    if (crval1 < 0) crval1 += 360;
+    let crval2 = (latMin + latMax) * 0.5;
+    const aspect = (lonMax - lonMin) * Math.cos(crval2 * Math.PI / 180.0) / (latMax - latMin);
+    const scale = Math.sqrt(starsPerPixel / this.density);
+    const naxis1 = Math.ceil((Math.floor(Math.sqrt(this.area * aspect) / scale * 1.1) + 20) / 10) * 10;
+    const naxis2 = Math.ceil((Math.floor(Math.sqrt(this.area / aspect) / scale * 1.1) + 20) / 10) * 10;
+    const ctypes = (this.cooSys === 'G') ? ['GLON-TAN', 'GLAT-TAN'] : ['RA---TAN', 'DEC--TAN'];
+    let header = {
+      SIMPLE: 'T', BITPIX: -32, NAXIS: 2,
+      NAXIS1: naxis1, NAXIS2: naxis2,
+      CRPIX1: naxis1 / 2.0, CRPIX2: naxis2 / 2.0,
+      CTYPE1: ctypes[0], CTYPE2: ctypes[1],
+      CRVAL1: Math.round(crval1 * 1e6) / 1e6, CRVAL2: Math.round(crval2 * 1e6) / 1e6,
+      CDELT1: -scale, CDELT2: scale,
+      CROTA2: 0.0, EQUINOX: 2000.0
+    };
+    return header;
   }
 }
 
 export const state2 = new Form2State();
+state2.step = 2;
 
 const FormCooSys = observer((props) => {
   return (
@@ -57,7 +90,7 @@ const FormCooSys = observer((props) => {
 const FormSymbad = observer((props) => {
   return (
     <Form.Input label='Object name (Simbad resolved)' action='Search' placeholder='object name' width={16}
-      onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && state2.handleSimbad()}
+      onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && state2.handleSimbad(e)}
       {...state2.props('object')} onBlur={state2.handleSimbad} {...props} />);
 });
 
@@ -117,7 +150,6 @@ const ReddeningLaw = observer((props) => {
   )
 });
 
-
 const ClearButton = observer(() => {
   return (
     <Button style={{ width: "110px" }} icon={state2.undo ? 'undo' : 'delete'} content={state2.undo ? 'Undo' : 'Clear'}
@@ -125,21 +157,24 @@ const ClearButton = observer(() => {
   );
 });
 
-const Map = observer(() => {
-  return (<OpenSeaDragonViewer id='osd' image={state2.mask} select scalebar cooform={state2} />);
-})
-
+const FormMessage = observer(() => {
+  return (state2.messageType === null) ? <></> : <Message {...state2.messageProps} />
+});
 
 export const MyForm2 = observer((props) => {
-  const [wait] = React.useState(false);
+  const [wait, setWait] = React.useState('');
+  const [waitIcon, setWaitIcon] = React.useState('spinner');
 
   const handleChange = state2.handleChange;
 
-  function handleNext(e) {
+  const handleNext = action((e) => {
     e.preventDefault();
-    state2.validate();
-    if (state2.validate()) props.onNext(e);
-  }
+    if (state2.validate()) {
+      state2.setMessage(0, true, null, () => {
+        props.onNext(e);
+      });
+    }
+  });
 
   function handleBack(e) {
     e.preventDefault();
@@ -152,9 +187,13 @@ export const MyForm2 = observer((props) => {
 
   return (
     <Container>
-      <Dimmer.Dimmable blurring dimmed={Boolean(wait)}>
-        <Dimmer active={Boolean(wait)} inverted >
-          <Loader inverted indeterminate content={String(wait)} />
+      <>
+        <Dimmer active={Boolean(wait)} page>
+          <Header as='h3' icon inverted>
+            <Icon // @ts-ignore
+              name={waitIcon} loading={waitIcon === 'spinner'} />
+            {String(wait)}
+          </Header>
         </Dimmer>
         <Form autoComplete='off'>
           <Header as='h2'>Control field</Header>
@@ -236,8 +275,11 @@ export const MyForm2 = observer((props) => {
           <ClearButton />
           <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
             onClick={handleNext} />
+          <Button icon='help' toggle floated='right' />
+          <Button icon='download' floated='right' onClick={props.downloader} />
         </Form>
-      </Dimmer.Dimmable>
+        <FormMessage />
+      </>
     </Container>);
 });
 

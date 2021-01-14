@@ -23,6 +23,7 @@ export const OpenSeaDragonViewer = observer((props) => {
   const handleSelection = action((rect) => {
     let cooform = cooformRef.current
     if (cooform) {
+      cooform.undo = false;
       const nx = 12000.0, ny = 6000.0
       const center = rect.getCenter(), size = rect.getSize();
       const values = {
@@ -42,10 +43,9 @@ export const OpenSeaDragonViewer = observer((props) => {
         cooform[k + 'Min'] = min;
         cooform[k + 'Max'] = max;
       }
-      cooform.undo = false;
+      cooform.setMessage();
     }
   });
-
 
   useEffect(() => {
     if (image && viewer) {
@@ -148,7 +148,7 @@ export const OpenSeaDragonViewer = observer((props) => {
     return () => {
       updateSelectionDestroyer && updateSelectionDestroyer();
     }
-  }, [select, props.cooform]);
+  }, [select, viewer, props.cooform]);
 
   return (
     <div>

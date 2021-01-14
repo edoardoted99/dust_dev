@@ -19,6 +19,13 @@ import { observable, action, isObservableProp, isComputedProp, when, computed } 
  * @class FormState
  */
 export class FormState {
+  /** 
+   * The current step in a multi-step form.
+   * @type { number }
+   * @memberof FormState
+   */
+  step = 0;
+
   /**
    * The list of validator functions associated to each observable.
    * 
@@ -45,7 +52,7 @@ export class FormState {
 
   /**
    * The type of message to show at the end of the form.
-   * @type {null|''|'success'|'info'|'warning'|'error'}
+   * @type {null|''|'message'|'success'|'info'|'warning'|'error'}
    * @memberof FormState
    */
   @observable messageType = null;
@@ -72,7 +79,7 @@ export class FormState {
   @computed({ keepAlive: true }) get messageProps() {
     if (this.messageType === null)
       return {};
-    else if (this.messageType)
+    else if (this.messageType && this.messageType !== 'message')
       return { [this.messageType]: true, header: this.messageHeader, content: this.messageContent };
     else
       return { header: this.messageHeader, content: this.messageContent };
