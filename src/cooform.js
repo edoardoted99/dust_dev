@@ -27,6 +27,13 @@ export class CooFormState extends FormState {
   @observable cooSys = 'G';
 
   /**
+   * The selection: rectangle or circle.
+   * @type {'R'|'C'}
+   * @memberof CooFormState
+   */
+  @observable shape = 'C';
+
+  /**
    * The object name, used with Sesame resolution.
    * @type {string}
    * @memberof CooFormState
@@ -62,6 +69,13 @@ export class CooFormState extends FormState {
    * @memberof CooFormState
    */
   @observable latCtr = '';
+
+  /**
+   * The radius, in flexible string format.
+   * @type {string}
+   * @memberof CooFormState
+   */
+  @observable radius = '';
 
   /**
    * The longitude width, in flexible string format.
@@ -130,21 +144,23 @@ export class CooFormState extends FormState {
   validators = {
     lonCtr: x => x.length <= 1 && 'Please enter a valid coordinate',
     latCtr: x => x.length <= 1 && 'Please enter a valid coordinate',
-    lonWdt: x => x.length <= 1 && 'Please enter a valid width',
-    latWdt: x => x.length <= 1 && 'Please enter a valid width',
-    lonMin: x => x.length <= 1 && 'Please enter a valid coordinate',
-    latMin: x => x.length <= 1 && 'Please enter a valid coordinate',
-    lonMax: x => x.length <= 1 && 'Please enter a valid coordinate',
-    latMax: x => x.length <= 1 && 'Please enter a valid coordinate',
+    radius: x => (this.shape === 'C' && x.length <= 1) && 'Please enter a valid radius',
+    lonWdt: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid width',
+    latWdt: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid width',
+    lonMin: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
+    latMin: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
+    lonMax: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
+    latMax: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
     // Empty validators
     cooSys: x => false,
+    shape: x => false,
     object: x => false,
     lonType: x => false,
     latType: x => false
   };
 
   cooValidate() {
-    const keys = ['lonCtr', 'latCtr', 'lonWdt', 'latWdt', 'lonMin', 'latMin', 'lonMax', 'latMax'];
+    const keys = ['lonCtr', 'latCtr', 'radius', 'lonWdt', 'latWdt', 'lonMin', 'latMin', 'lonMax', 'latMax'];
     for (let k of keys)
       if (this.validators[k](this[k])) return false;
     return true;
@@ -152,7 +168,8 @@ export class CooFormState extends FormState {
 
   @action setMessage(delay = 500, startQuery = false, cbStart = null, cbSuccess = null, cbFail = null) {
     const axios = require('axios').default;
-    const keys = ['lonCtr', 'latCtr', 'lonWdt', 'latWdt', 'lonMin', 'latMin', 'lonMax', 'latMax', 'coo_sys', 'step'];
+    const keys = ['lonCtr', 'latCtr', 'radius', 'lonWdt', 'latWdt', 'lonMin', 'latMin', 'lonMax', 'latMax',
+      'coo_sys', 'shape', 'step'];
     let skipWait = false;
     if (this.cooValidate()) {
       // Check if the call is a duplicated one
@@ -172,10 +189,12 @@ export class CooFormState extends FormState {
         axios
           .post('/app/count_stars', {
             ...this.adqlComponents,
+            shape: this.shape,
             lon_ctr: this.lonCtrAngle.degrees,
             lon_wdt: this.lonWdtAngle.degrees,
             lat_ctr: this.latCtrAngle.degrees,
             lat_wdt: this.latWdtAngle.degrees,
+            radius: this.radiusAngle.degrees,
             lon_min: this.lonMinAngle.degrees,
             lon_max: this.lonMaxAngle.degrees,
             lat_min: this.latMinAngle.degrees,
@@ -220,6 +239,10 @@ export class CooFormState extends FormState {
     return new Angle(this.latCtr, 'latitude');
   }
   set latCtrAngle(angle) { this.latCtr = angle.angle; }
+  @computed({ keepAlive: true }) get radiusAngle() {
+    return new Angle(this.radius, 'longitude');
+  }
+  set radiusAngle(angle) { this.radius = angle.angle; }
   @computed({ keepAlive: true }) get lonWdtAngle() {
     return new Angle(this.lonWdt, (this.cooSys === 'E') ? 'hms' : 'longitude');
   }
@@ -253,11 +276,15 @@ export class CooFormState extends FormState {
    * @memberof CooFormState
    */
   @computed({ keepAlive: true }) get area() {
-    let lonMin = this.lonMinAngle.degrees, lonMax = this.lonMaxAngle.degrees,
-      latMin = this.latMinAngle.degrees, latMax = this.latMaxAngle.degrees;
-    if (lonMin > lonMax) lonMin -= 360;
-    return Math.abs((lonMax - lonMin) * 180.0 / Math.PI *
-      (Math.sin(latMax * Math.PI / 180.0) - Math.sin(latMin * Math.PI / 180.0)));
+    if (this.shape === 'R') {
+      let lonMin = this.lonMinAngle.degrees, lonMax = this.lonMaxAngle.degrees,
+        latMin = this.latMinAngle.degrees, latMax = this.latMaxAngle.degrees;
+      if (lonMin > lonMax) lonMin -= 360;
+      return Math.abs((lonMax - lonMin) * 180.0 / Math.PI *
+        (Math.sin(latMax * Math.PI / 180.0) - Math.sin(latMin * Math.PI / 180.0)));
+    } else {
+      return (1 - Math.cos(this.radiusAngle.degrees * Math.PI / 180.0)) * 360.0 * 180.0 / Math.PI;
+    }
   }
 
   /**
@@ -317,14 +344,18 @@ export class CooFormState extends FormState {
           this.lonCtrAngle = lon;
           this.latCtrAngle = lat;
           if (size) {
-            const c = Math.cos(lat.degrees * Math.PI / 180.0)
-            this.lonWdtAngle = (new Angle(size / c / (this.cooSys === 'E' ? 15 : 1),
-              this.cooSys === 'E' ? 'hms' : 'longitude', 2));
-            this.latWdtAngle = (new Angle(size, 'longitude', 2));
-          } else this.lonWdt = this.latWdt = '';
+            if (this.shape === 'R') {
+              const c = Math.cos(lat.degrees * Math.PI / 180.0)
+              this.lonWdtAngle = (new Angle(size / c / (this.cooSys === 'E' ? 15 : 1),
+                this.cooSys === 'E' ? 'hms' : 'longitude', 2));
+              this.latWdtAngle = (new Angle(size, 'longitude', 2));
+            } else this.radiusAngle = (new Angle(size / 2, 'longitude', 2));
+          } else this.lonWdt = this.latWdt = this.radius = '';
           this.errors.object = false;
-          this.handleLinkedChange(e, { name: 'lonWdt', value: this.lonWdt });
-          this.handleLinkedChange(e, { name: 'latWdt', value: this.latWdt });
+          if (this.shape === 'R') {
+            this.handleLinkedChange(e, { name: 'lonWdt', value: this.lonWdt });
+            this.handleLinkedChange(e, { name: 'latWdt', value: this.latWdt });
+          }
           this.setMessage();
         } else this.errors.object = 'Simbad could not resolve this object name';
       } else this.errors.object = 'Connection error to Simbad';
@@ -362,7 +393,7 @@ export class CooFormState extends FormState {
    * @return {String[]} An array with the minimum and maximum angles
    * @memberof CooFormState
    */
-    cw2mm(ctr, wdt, type) {
+  cw2mm(ctr, wdt, type) {
     if (ctr === '' || wdt === '') return ['', ''];
     const ctrAngle = new Angle(ctr, type), wdtAngle = new Angle(wdt);
     return _.map(ctrAngle.scaleAdd(wdtAngle, [-0.5, 0.5], [1, 1]), a => a.angle);
@@ -396,20 +427,22 @@ export class CooFormState extends FormState {
   @action.bound handleLinkedChange(e, { name, value }) {
     const lonlat = name.substr(0, 3), rest = name.substr(3), isCorner = name[3] === 'M';
     const type = (lonlat === 'lat') ? 'latitude' : ((this.cooSys === 'E') ? 'hms' : 'longitude');
-    if (isCorner) {
-      let [ctr, wdt] = this.mm2cw(
-        (rest === 'Min') ? value : this[lonlat + 'Min'],
-        (rest === 'Max') ? value : this[lonlat + 'Max'], type);
-      this[lonlat + 'Type'] = 2;
-      this[lonlat + 'Ctr'] = ctr;
-      this[lonlat + 'Wdt'] = wdt;
-    } else {
-      let [min, max] = this.cw2mm(
-        (rest === 'Ctr') ? value : this[lonlat + 'Ctr'],
-        (rest === 'Wdt') ? value : this[lonlat + 'Wdt'], type);
-      this[lonlat + 'Type'] = 1;
-      this[lonlat + 'Min'] = min;
-      this[lonlat + 'Max'] = max;
+    if (name !== 'radius') {
+      if (isCorner) {
+        let [ctr, wdt] = this.mm2cw(
+          (rest === 'Min') ? value : this[lonlat + 'Min'],
+          (rest === 'Max') ? value : this[lonlat + 'Max'], type);
+        this[lonlat + 'Type'] = 2;
+        this[lonlat + 'Ctr'] = ctr;
+        this[lonlat + 'Wdt'] = wdt;
+      } else {
+        let [min, max] = this.cw2mm(
+          (rest === 'Ctr') ? value : this[lonlat + 'Ctr'],
+          (rest === 'Wdt') ? value : this[lonlat + 'Wdt'], type);
+        this[lonlat + 'Type'] = 1;
+        this[lonlat + 'Min'] = min;
+        this[lonlat + 'Max'] = max;
+      }
     }
     this.handleChange(e, { name, value });
     this.setMessage();
@@ -468,15 +501,140 @@ export class CooFormState extends FormState {
     this.setMessage();
   }
 
+  @action.bound handleShapeChange(e, { name, value, checked }) {
+    const c = Math.cos(this.latCtrAngle.degrees * Math.PI / 180);
+    this.handleChange(e, { name, value, checked });
+    if (value === 'C' && checked) {
+      if (this.lonWdt && this.latWdt) {
+        const numFields = Math.max(this.lonWdtAngle.values.length, this.latWdtAngle.values.length);
+        const radius = new Angle(0, 'longitude', numFields);
+        radius.degrees = Math.sqrt(this.lonWdtAngle.degrees * this.latWdtAngle.degrees * c) / 2;
+        this.radius = radius.angle;
+      } else this.radius = '';
+      this.setMessage();
+    } else {
+      let lonWdt = '', latWdt = '';
+      if (this.radius) {
+        lonWdt = ((new Angle(this.radius, 'longitude')).scale$(2 / c)).angle;
+        latWdt = (new Angle(this.radius, 'longitude').scale$(this.cooSys === 'E' ? 2 / 15 : 2)).angle;
+      }
+      this.handleLinkedChange(e, { name: 'lonWdt', value: lonWdt });
+      this.handleLinkedChange(e, { name: 'latWdt', value: latWdt });
+    }
+  }
+
   /**
    * Copy the relevant fields from another `CooFormState`.
    * @param {CooFormState} orig - The object to copy from.
    * @memberof CooFormState
    */
   @action.bound copyFrom(orig) {
-    for (let field of ['cooSys', 'lonType', 'latType', 'lonCtr', 'latCtr', 'lonWdt', 'latWdt',
-      'lonMin', 'latMin', 'lonMax', 'latMax', 'messageType', 'messageHeader', 'messageContent',
-      'nstars', 'job_urls'])
+    for (let field of ['cooSys', 'shape', 'lonType', 'latType', 'lonCtr', 'latCtr', 'radius',
+      'lonWdt', 'latWdt', 'lonMin', 'latMin', 'lonMax', 'latMax',
+      'messageType', 'messageHeader', 'messageContent', 'nstars', 'job_urls'])
       this[field] = _.clone(orig[field]);
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Interface code
+
+import React from 'react'
+import { observer } from 'mobx-react' 
+import { Grid, Header, Form, Divider } from 'semantic-ui-react'
+import { InputAngle } from './inputangle.js'
+
+const FormOptions = observer((props) => {
+  let state = props.cooform;
+  return (
+    <Grid relaxed='very' stackable verticalAlign='top'>
+      <Grid.Row>
+        <Grid.Column width={10} stretched>
+          <Header as='h3' dividing>Coordinate system</Header>
+          <Form.Group inline>
+            <Form.Radio label='Galatic' name='cooSys' value='G'
+              checked={state.cooSys === 'G'} onChange={state.handleChange} {...props} />
+            <Form.Radio label='Equatorial (hms)' name='cooSys' value='E'
+              checked={state.cooSys === 'E'} onChange={state.handleChange} {...props} />
+            <Form.Radio label='Equatorial (degrees)' name='cooSys' value='D'
+              checked={state.cooSys === 'D'} onChange={state.handleChange} {...props} />
+          </Form.Group>
+        </Grid.Column>
+        <Grid.Column width={6} stretched>
+          <Header as='h3' dividing>Shape</Header>
+          <Form.Group inline>
+            <Form.Radio label='Cone' name='shape' value='C'
+              checked={state.shape === 'C'} onChange={state.handleShapeChange} {...props} />
+            <Form.Radio label='Slice' name='shape' value='R'
+              checked={state.shape === 'R'} onChange={state.handleShapeChange} {...props} />
+          </Form.Group>
+        </Grid.Column>
+      </Grid.Row>
+    </Grid>
+  );
+});
+
+const FormSymbad = observer((props) => {
+  let state = props.cooform;
+  return (
+    <Form.Input label='Object name (Simbad resolved)' action='Search' placeholder='object name' width={16}
+      onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && state.handleSimbad(e)}
+      {...state.props('object')} onBlur={state.handleSimbad} {...props} />);
+});
+
+const FormAngle = observer((props) => {
+  let state = props.cooform;
+  return (
+    <InputAngle value={state[props.name]} onChange={state.handleLinkedChange}
+      error={state.errors[props.name]} {...props} />
+  );
+});
+
+export const CooForm = observer((props) => {
+  let state = props.cooform;
+
+  return (
+    <>
+      <FormOptions cooform={state} />
+
+      <Header as='h3' dividing>{state.shape === 'R' ? 'Rectangular ' : 'Cone '}
+      selection: center and {state.shape === 'R' ? 'widths' : 'radius'}</Header>
+      <FormSymbad cooform={state} />
+
+      <Form.Group>
+        <FormAngle label={'Center ' + state.lonName} width={8} name='lonCtr'
+          type={state.cooSys != 'E' ? 'longitude' : 'hms'} cooform={state} />
+        <FormAngle label={'Center ' + state.latName} width={8} name='latCtr'
+          type='latitude' cooform={state} />
+      </Form.Group>
+      {state.shape === 'R' ?
+        <Form.Group>
+          <FormAngle label='Width' width={8} name='lonWdt'
+            type={state.cooSys != 'E' ? 'longitude' : 'hms'} cooform={state}/>
+          <FormAngle label='Height' width={8} name='latWdt'
+            type='longitude' cooform={state} />
+        </Form.Group>
+        :
+        <FormAngle label='Radius' width={8} name='radius'
+          type='longitude' cooform={state} />
+      }
+      {state.shape === 'R' ?
+        <>
+          <Header as='h3' dividing>Rectangular selection: corners</Header>
+          <Form.Group>
+            <FormAngle label={'Minimum ' + state.lonName} width={8} name='lonMin'
+              type={state.cooSys != 'E' ? 'longitude' : 'hms'} cooform={state} />
+            <FormAngle label={'Minimum ' + state.latName} width={8} name='latMin'
+              type='latitude' cooform={state} />
+          </Form.Group>
+          <Form.Group>
+            <FormAngle label={'Maximum ' + state.lonName} width={8} name='lonMax'
+              type={state.cooSys != 'E' ? 'longitude' : 'hms'} cooform={state} />
+            <FormAngle label={'Maximum ' + state.latName} width={8} name='latMax'
+              type='latitude' cooform={state} />
+          </Form.Group>
+        </>
+        : <></>}
+    </>);
+});
+

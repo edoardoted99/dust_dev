@@ -6,9 +6,8 @@ import React from 'react'
 import _ from 'lodash'
 import { observable, action, configure } from 'mobx'
 import { observer } from "mobx-react"
-import { Container, Icon, Dimmer, Message, Form, Header, Button, FormField, Input, Label } from 'semantic-ui-react'
-import { InputAngle } from './inputangle.js'
-import { CooFormState } from './cooform.js'
+import { Container, Icon, Dimmer, Message, Form, Header, Button, FormField, Input, Label, Divider } from 'semantic-ui-react'
+import { CooFormState, CooForm } from './cooform.js'
 
 configure({ enforceActions: 'observed' });
 
@@ -23,20 +22,22 @@ export class Form2State extends CooFormState {
   @observable extinctionSubsteps = 5;
 
   validators = {
-    lonCtr: x => x === '' && 'Please enter a valid coordinate',
-    latCtr: x => x === '' && 'Please enter a valid coordinate',
-    lonWdt: x => x === '' && 'Please enter a valid width',
-    latWdt: x => x === '' && 'Please enter a valid width',
-    lonMin: x => x === '' && 'Please enter a valid coordinate',
-    latMin: x => x === '' && 'Please enter a valid coordinate',
-    lonMax: x => x === '' && 'Please enter a valid coordinate',
-    latMax: x => x === '' && 'Please enter a valid coordinate',
+    lonCtr: x => x.length <= 1 && 'Please enter a valid coordinate',
+    latCtr: x => x.length <= 1 && 'Please enter a valid coordinate',
+    radius: x => (this.shape === 'C' && x.length <= 1) && 'Please enter a valid radius',
+    lonWdt: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid width',
+    latWdt: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid width',
+    lonMin: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
+    latMin: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
+    lonMax: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
+    latMax: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
     areaFraction: x => !(x > 1 && x < 100) && 'The percentage must be between 1 and 100',
     starFraction: x => !(x > 1 && x < 100) && 'The percentage must be between 1 and 100',
     maxExtinction: x => !(x > 0 && x < 10) && 'The maximum extinction must be between 0 and 10',
     reddeningLaw: xs => _.map(xs, x => !(x > 0 && x < 100) && 'The coefficient must be between 0 and 100'),
     // Empty validators
     cooSys: x => false,
+    shape: x => false,
     object: x => false,
     lonType: x => false,
     latType: x => false,
@@ -73,33 +74,6 @@ export class Form2State extends CooFormState {
 
 export const state2 = new Form2State();
 state2.step = 2;
-
-const FormCooSys = observer((props) => {
-  return (
-    <Form.Group inline>
-      <Form.Radio label='Galatic' name='cooSys' value='G'
-        checked={state2.cooSys === 'G'} {...props} />
-      <Form.Radio label='Equatorial (hms)' name='cooSys' value='E'
-        checked={state2.cooSys === 'E'} {...props} />
-      <Form.Radio label='Equatorial (degrees)' name='cooSys' value='D'
-        checked={state2.cooSys === 'D'} {...props} />
-    </Form.Group>
-  );
-});
-
-const FormSymbad = observer((props) => {
-  return (
-    <Form.Input label='Object name (Simbad resolved)' action='Search' placeholder='object name' width={16}
-      onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && state2.handleSimbad(e)}
-      {...state2.props('object')} onBlur={state2.handleSimbad} {...props} />);
-});
-
-const FormAngle = observer((props) => {
-  return (
-    <InputAngle value={state2[props.name]} onChange={state2.handleLinkedChange}
-      error={state2.errors[props.name]} {...props} />
-  );
-});
 
 const InputUnit = observer((props) => {
   const { name, label, unit } = props;
@@ -165,8 +139,6 @@ export const MyForm2 = observer((props) => {
   const [wait, setWait] = React.useState('');
   const [waitIcon, setWaitIcon] = React.useState('spinner');
 
-  const handleChange = state2.handleChange;
-
   const handleNext = action((e) => {
     e.preventDefault();
     if (state2.validate()) {
@@ -206,38 +178,8 @@ export const MyForm2 = observer((props) => {
               <p></p>
           <Button content='Copy science field area' icon='clone outline' labelPosition='left' basic size='small'
             onClick={handleCopy} />
-
-          <Header as='h3' dividing>Coordinate system</Header>
-          <FormCooSys onChange={handleChange} />
-          <Header as='h3' dividing>Rectangular selection: center and widths</Header>
-          <FormSymbad />
-
-          <Form.Group>
-            <FormAngle label={'Center ' + state2.lonName} width={8} name='lonCtr'
-              type={state2.cooSys != 'E' ? 'longitude' : 'hms'} />
-            <FormAngle label={'Center ' + state2.latName} width={8} name='latCtr'
-              type='latitude' />
-          </Form.Group>
-          <Form.Group>
-            <FormAngle label='Width' width={8} name='lonWdt'
-              type={state2.cooSys != 'E' ? 'longitude' : 'hms'}
-            />
-            <FormAngle label='Height' width={8} name='latWdt'
-              type='longitude' />
-          </Form.Group>
-          <Header as='h3' dividing>Rectangular selection: corners</Header>
-          <Form.Group>
-            <FormAngle label={'Minimum ' + state2.lonName} width={8} name='lonMin'
-              type={state2.cooSys != 'E' ? 'longitude' : 'hms'} />
-            <FormAngle label={'Minimum ' + state2.latName} width={8} name='latMin'
-              type='latitude' />
-          </Form.Group>
-          <Form.Group>
-            <FormAngle label={'Maximum ' + state2.lonName} width={8} name='lonMax'
-              type={state2.cooSys != 'E' ? 'longitude' : 'hms'} />
-            <FormAngle label={'Maximum ' + state2.latName} width={8} name='latMax'
-              type='latitude' />
-          </Form.Group>
+          <Divider hidden />
+          <CooForm cooform={state2} />
 
           <Header as='h2'>Calibration parameters</Header>
           <Header as='h3' dividing>Star selection</Header>

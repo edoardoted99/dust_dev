@@ -128,16 +128,21 @@ class AppServer:
             f'../{STATIC_PATH}/hips/{data["dataset"]}.hpx', h=True, verbose=False)
         header = dict(header)
         nside = header['NSIDE']
-        strip = hp.query_strip(nside,
-                               (90.0 - data['lat_max']) *
-                               d2r, (90.0 - data['lat_min'])*d2r,
-                               inclusive=True)
-        colat, lon = hp.pix2ang(nside, strip)  # pylint: disable=unused-variable
-        if data['lon_min'] > data['lon_max']:
-            mask = (lon < data['lon_max']*d2r) | (lon > data['lon_min']*d2r)
+        if data['shape'] == 'R':
+            strip = hp.query_strip(nside,
+                                (90.0 - data['lat_max']) * d2r,
+                                (90.0 - data['lat_min']) * d2r,
+                                inclusive=True)
+            colat, lon = hp.pix2ang(nside, strip)  # pylint: disable=unused-variable
+            if data['lon_min'] > data['lon_max']:
+                mask = (lon < data['lon_max']*d2r) | (lon > data['lon_min']*d2r)
+            else:
+                mask = (lon < data['lon_max']*d2r) & (lon > data['lon_min']*d2r)
+            nstars = np.sum(rho[strip[mask]])
         else:
-            mask = (lon < data['lon_max']*d2r) & (lon > data['lon_min']*d2r)
-        nstars = np.sum(rho[strip[mask]])
+            vec = hp.ang2vec((90 - data['lat_ctr']) * d2r, data['lon_ctr'] * d2r)
+            disk = hp.query_disc(nside, vec, data['radius']*d2r, inclusive=True)
+            nstars = np.sum(rho[disk])
         if (nstars < 200):
             star_number = f'~{int(nstars)}'
         elif (nstars < 2000):

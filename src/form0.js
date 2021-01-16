@@ -52,11 +52,12 @@ export class Form0State extends FormState {
     this.messageType = null;
   }
 
-  @computed({ keepAlive: true }) get mask() {
+  @computed({ keepAlive: true }) get mocs() {
     if (this.catalog) {
-      const source = datasetsDict[this.catalog].mask || 'default';
-      return `/static/masks/${source}.dzi`;
-    } else return null;
+      const mocs = datasetsDict[this.catalog].mocs || [];
+      if (_.isArray(mocs)) return mocs;
+      else return [mocs];
+    } else return [];
   }
 
   @computed({ keepAlive: true }) get servers() {

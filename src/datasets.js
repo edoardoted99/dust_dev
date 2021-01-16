@@ -85,7 +85,8 @@ export const datasetsDict = {
     description: 'VISION',
     image: logoEmpty,
     servers: ['VizieR'],
-    mask: 'VISION',
+    mocs: ['http://alasky.u-strasbg.fr/footprints/tables/vizier/J_A+A_587_A153_science/MOC',
+      'http://alasky.u-strasbg.fr/footprints/tables/vizier/J_A+A_587_A153_control/MOC'],
     catalogs: ['"J/A+A/587/A153/science"', '"J/A+A/587/A153/control"'],
     coords: {
       E: ['RAJ2000', 'DEJ2000']

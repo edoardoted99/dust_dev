@@ -79,19 +79,20 @@ export class Angle {
   }
 
   /**
-   * Set the angle from a list of numeric values
+   * Return the angle string corresponding to the current Angle.
    * @memberof Angle
    */
   get angle() {
-    var res = [], neg = false, markers, basePrecision = this.precision;
+    let res = [], neg = false, len = this.values.length, markers, basePrecision = this.precision;
     if (this.type === 'hms') {
       markers = 'ʰᵐˢ'
       basePrecision += 1
     } else markers = '°\'"';
-    for (let i = 0; i < this.values.length; i++) {
-      let v = Math.abs(this.values[i]), s
+    let x = new Angle(_.round(this.value, basePrecision - len * 2), this.type, len, basePrecision);
+    for (let i = 0; i < len; i++) {
+      let v = Math.abs(x.values[i]), s
       s = v.toFixed(basePrecision - i * 2).replace(/0*$/, '').replace('.', markers[i] + '.').replace(/\.$/, '');
-      neg = neg || (this.values[i] < 0);
+      neg = neg || (x.values[i] < 0);
       res.push(s);
     }
     if (this.type === 'latitude') res[0] = (neg ? '–' : '+') + res[0];

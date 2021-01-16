@@ -15,7 +15,6 @@ import { MyForm2, state2 } from './form2.js'
 import { MyForm3, FormSVG, state3 } from './form3.js'
 import { MyForm4, state4 } from './form4.js'
 import { Angle } from './angle.js';
-import { OpenSeaDragonViewer } from './openseadragon.js'
 import { downloadJSON } from './downloadJSON.js'
 import { AladinForm } from './aladin.js'
 
@@ -24,12 +23,6 @@ state3.state1 = state1;
 state3.state2 = state2;
 
 const states = [state0, state1, state2, state3, state4];
-
-const Map = observer((props) => {
-  if (state0.mask) {
-    return (<OpenSeaDragonViewer image={state0.mask} scalebar {...props} />);
-  } else return (<></>);
-})
 
 export function MyApp(props) 
 {
@@ -210,7 +203,7 @@ export function MyApp(props)
           {step < 4 ?
             <Grid.Column style={{ width: "400px" }}>
               {step < 3 ?
-                <AladinForm select={step === 0 ? 'disabled' : true} cooform={cooforms[step]} />
+                <AladinForm cooform={cooforms[step]} state0={state0} />
                 :
                 <FormSVG state1={state1} />
               }
