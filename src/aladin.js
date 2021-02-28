@@ -2,10 +2,11 @@
 'use strict';
 
 import React from 'react'
-import { autorun } from 'mobx'
+import { autorun, action } from 'mobx'
 import { observer } from 'mobx-react'
-import { Button, Icon } from 'semantic-ui-react'
+import { Button, Divider } from 'semantic-ui-react'
 import { galactic2equatorial } from './coordinates.js'
+import { sphereLine, sphereCircle } from './spherical.js'
 import './css/aladin.css';
 
 const hipsMaps = [
@@ -17,13 +18,13 @@ export const AladinForm = observer((props) => {
   const surveys = React.useRef([]);
   const constellations = React.useRef([]);
   const overlay = React.useRef(null);
+  const fitsFile = React.useRef({ url: null, name: '', coosys: '' });
   const cooformRef = React.useRef(props.cooform);
   cooformRef.current = props.cooform;
 
   // Main window display
   React.useEffect(() => {
     aladin.current = A.aladin('#aladin-lite-div', {
-      // survey: 'CDS/P/DM/flux-color-Rp-G-Bp/I/345/gaia2',
       cooFrame: 'galactic',
       fov: 180,
       showLayersControl: false,
@@ -81,28 +82,6 @@ export const AladinForm = observer((props) => {
   }, [props.state0.mocs]);
   // Region display
   const updateSelection = () => {
-    function line(points, x0, y0, x1, y1, maxstep = 1) {
-      let dx = x1 - x0, dy = y1 - y0;
-      const c = Math.cos((y1 + y0) * Math.PI / 360), len = Math.sqrt(dx * dx + dy * dy * c * c);
-      const nsteps = Math.ceil(len / maxstep);
-      dx /= nsteps;
-      dy /= nsteps
-      for (let n = 0; n < nsteps; n++)
-        points.push([x0 + dx * n, y0 + dy * n]);
-      points.push([x1, y1]);
-    }
-    function circle(points, x0, y0, r, maxstep = 1, minpoints = 64) {
-      const a = r * Math.PI / 180, b = (90 - y0) * Math.PI / 180;
-      const cos_a = Math.cos(a), sin_a = Math.sin(a);
-      const cos_b = Math.cos(b), sin_b = Math.sin(b);
-      const nsteps = Math.max(minpoints, Math.ceil(Math.sin(a) * 360 / maxstep) + 1);
-      for (let n = 0; n <= nsteps; n++) {
-        // C = 2 * Math.PI / nsteps * n
-        let c = Math.acos(cos_a * cos_b + sin_a * sin_b * Math.cos(2 * Math.PI / nsteps * n));
-        let A = Math.asin(Math.sin(2 * Math.PI / nsteps * n) * sin_a / Math.sin(c))
-        points.push([x0 + A * 180 / Math.PI, 90 - c * 180 / Math.PI]);
-      }
-    }
     overlay.current.overlay_items = [];
     if (cooformRef.current) {
       const cooform = cooformRef.current;
@@ -115,12 +94,12 @@ export const AladinForm = observer((props) => {
             lon_max = cooform.lonCtrAngle.degrees + cooform.lonWdtAngle.degrees / 2,
             lat_min = cooform.latMinAngle.degrees,
             lat_max = cooform.latMaxAngle.degrees;
-          line(points, lon_max, lat_min, lon_min, lat_min);
-          line(points, lon_min, lat_min, lon_min, lat_max);
-          line(points, lon_min, lat_max, lon_max, lat_max);
-          line(points, lon_max, lat_max, lon_max, lat_min);
+          sphereLine(points, lon_max, lat_min, lon_min, lat_min);
+          sphereLine(points, lon_min, lat_min, lon_min, lat_max);
+          sphereLine(points, lon_min, lat_max, lon_max, lat_max);
+          sphereLine(points, lon_max, lat_max, lon_max, lat_min);
         } else {
-          circle(points, cooform.lonCtrAngle.degrees, cooform.latCtrAngle.degrees, cooform.radiusAngle.degrees);
+          sphereCircle(points, cooform.lonCtrAngle.degrees, cooform.latCtrAngle.degrees, cooform.radiusAngle.degrees);
         }
         if (cooform.cooSys == 'G') {
           for (let n in points)
@@ -138,6 +117,33 @@ export const AladinForm = observer((props) => {
       updateSelectionDestroyer && updateSelectionDestroyer();
     }
   }, [props.cooform]);
+
+  React.useEffect(() => {
+    if (props.fitsURL != fitsFile.current.url) {
+      if (props.fitsURL) {
+        $.ajax({
+          url: 'https://alasky.unistra.fr/cgi/fits2HiPS',
+          data: { url: props.fitsURL },
+          method: 'GET',
+          dataType: 'json',
+          success: function (response) {
+            if (response.status !== 'success') {
+              console.error('An error occured: ' + response.message);
+              return;
+            }
+            let label = props.fitsName, meta = response.data.meta;
+            aladin.current.setOverlayImageLayer(
+              aladin.current.createImageSurvey(label, label, response.data.url, props.fitsCoosys,
+                meta.max_norder, { imgFormat: 'png' }));
+            aladin.current.getOverlayImageLayer().setAlpha(1.0);
+            aladin.current.gotoRaDec(meta.ra, meta.dec);
+            aladin.current.setFov(meta.fov);
+            fitsFile.current = { url: props.fitsURL, name: props.fitsName, coosys: props.fitsCoosys };
+          }
+        });
+      }
+    }
+  }, [props.fitsURL]);
 
   const handleSurvey = () => {
     const i = surveys.current.indexOf(aladin.current.getBaseImageLayer());
@@ -166,29 +172,54 @@ export const AladinForm = observer((props) => {
     cmap.update(cmaps[(cmaps.indexOf(cmap.mapName) + 1) % cmaps.length]);
   };
 
+  const handleFitsColormap = () => {
+    const cmaps = ['native', 'cubehelix', 'eosb', 'rainbow', 'grayscale'];
+    let cmap = aladin.current.getOverlayImageLayer().getColorMap();
+    cmap.update(cmaps[(cmaps.indexOf(cmap.mapName) + 1) % cmaps.length]);
+  };
+
+  const copyPosition = action((e) => {
+    let coords = aladin.current.getRaDec();
+    if (props.cooform.cooSys === 'G')
+      coords = CooConversion.J2000ToGalactic(coords);
+    props.cooform.lonCtrAngle.degrees = coords[0];
+    props.cooform.handleLinkedChange(e, { name: 'lonCtr', value: props.cooform.lonCtrAngle.angle });
+    props.cooform.latCtrAngle.degrees = coords[1];
+    props.cooform.handleLinkedChange(e, { name: 'latCtr', value: props.cooform.latCtrAngle.angle });
+  });
+
   props.cooform && props.cooform.cooValidate();
   return (
     <div>
-      <Button.Group basic>
-        <Button icon='home' onClick={() => {
-          aladin.current.gotoPosition(0, 0);
-          aladin.current.setFov(180);
-        }} />
-        <Button icon='zoom in' onClick={() => aladin.current.setFov(aladin.current.getFov()[0] / 2)}/>
-        <Button icon='zoom out' onClick={() => aladin.current.setFov(Math.min(180, aladin.current.getFov()[0] * 2))}/>
-        {props.cooform ?
-          <Button icon='target' disabled={props.cooform.lonCtr.length <= 1 || props.cooform.latCtr.length <= 1}
-            onClick={() =>
-            aladin.current.gotoPosition(props.cooform.lonCtrAngle.degrees, props.cooform.latCtrAngle.degrees)} />
-          : <></>
-        }
-      </Button.Group>
-      {' '}
-      <Button.Group basic>
-        <Button icon='clone outline' onClick={handleSurvey} />
-        <Button icon='star outline' onClick={handleConstellation} />
-        <Button icon='flask' onClick={handleColormap} />
-      </Button.Group>
+      <div style={{paddingBottom: '0.2em'}}>
+        <Button.Group basic>
+          <Button icon='home' onClick={() => {
+            aladin.current.gotoPosition(0, 0);
+            aladin.current.setFov(180);
+          }} />
+          <Button icon='zoom in' onClick={() => aladin.current.setFov(aladin.current.getFov()[0] / 2)}/>
+          <Button icon='zoom out' onClick={() => aladin.current.setFov(Math.min(180, aladin.current.getFov()[0] * 2))}/>
+          {props.cooform ?
+            <>
+            <Button icon='target' disabled={props.cooform.lonCtr.length <= 1 || props.cooform.latCtr.length <= 1}
+              onClick={() =>
+              aladin.current.gotoPosition(props.cooform.lonCtrAngle.degrees, props.cooform.latCtrAngle.degrees)} />
+            <Button icon='crosshairs' onClick={copyPosition} />
+            </>
+            : <></>
+          }
+        </Button.Group>
+        {' '}
+        <Button.Group basic>
+          <Button icon='clone outline' onClick={handleSurvey} />
+          {props.fitsURL === undefined ?
+            <Button icon='star outline' onClick={handleConstellation} />
+            :
+            <Button icon='tint' onClick={handleFitsColormap} />
+          }
+          <Button icon='flask' onClick={handleColormap} />
+        </Button.Group>
+      </div>
       <div id='aladin-lite-div' style={{ width: '400px', height: '400px' }} />
     </div>
   );

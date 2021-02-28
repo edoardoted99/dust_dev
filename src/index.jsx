@@ -3,7 +3,7 @@
 
 import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom'
-import { action, autorun, reaction, isObservableProp, isComputedProp, trace } from 'mobx';
+import { action, reaction } from 'mobx';
 import { observer } from 'mobx-react';
 
 import 'semantic-ui-css/semantic.min.css'
@@ -26,7 +26,7 @@ const states = [state0, state1, state2, state3, state4];
 
 export function MyApp(props) 
 {
-  const [step, setStep] = React.useState(0);
+  const [step, setStep] = React.useState(0); // FIXME
   const [completed, setCompleted] = React.useState(-1);
   const cooforms = [null, state1, state2, null];
   const abortProcess = () => {
@@ -45,11 +45,12 @@ export function MyApp(props)
       reactions.push(
         reaction(() => {
           let result = {};
+          // @ts-ignore
           for (let k in states[n].validators) {
             // Alternatively, we could check that
             // isObservableProp(this, k) && (!isComputedProp(this, k)
             // but there are a number of exceptions (undo, state1, state2, job_urls...)
-            result[k] = states[n][k];
+            result[k] = _.cloneDeep(states[n][k]);
           }
           return result;
         },
@@ -99,9 +100,9 @@ export function MyApp(props)
   const resetApp = action(() => {
     // FIXME: I would like to do the following, but this triggers a reaction and makes
     // completed = 2, which is not nice at all!
-    // state1.messageType = null;
-    // state2.messageType = null;
-    // state3.messageType = null;
+    state1.messageType = null;
+    state2.messageType = null;
+    state3.messageType = null;
     abortProcess();
     setCompleted(-1);
     setStep(0);
@@ -189,7 +190,7 @@ export function MyApp(props)
         downloader={() => downloadJSON([state0.pull(), state1.pull(), state2.pull(), state3.pull()], 'xnicest.cfg')} />);
       break;
     case 4:
-      form = (<MyForm4 onAbort={resetApp} products={state3.products} />);
+      form = (<MyForm4 onAbort={resetApp} products={state3.products} coosys={state3.coosys} />);
       break;
   }
   return (
@@ -200,19 +201,26 @@ export function MyApp(props)
           <Grid.Column style={{ flex: "1" }}>
             {form}
           </Grid.Column>
-          {step < 4 ?
-            <Grid.Column style={{ width: "400px" }}>
-              {step < 3 ?
-                <AladinForm cooform={cooforms[step]} state0={state0} />
-                :
+          <Grid.Column style={{ width: "400px" }}>
+            {step < 3 ?
+              <AladinForm cooform={cooforms[step]} state0={state0} />
+              : step == 3 ?
                 <FormSVG state1={state1} />
-              }
-            </Grid.Column> : <></>}
+                : <FitsForm state0={state0} />
+            }
+            </Grid.Column>
         </Grid>
       </Container>
     </div>
   );
 }
+
+const FitsForm = observer(props => {
+  if (state4.fitsFile) {
+    return <AladinForm fitsURL={state4.fitsFile.url} fitsName={state4.fitsFile.name}
+      fitsCoosys={state4.fitsFile.coosys} {...props} />;
+  } else return <></>;
+})
 
 const AppStepGroup = observer(props => {
   const step = props.step, completed = props.completed;
@@ -230,7 +238,7 @@ const AppStepGroup = observer(props => {
       icon: { name: bug ? 'bug' : icons[i], color: bug ? 'red' : null, loading: i === 4 && state4.state === 'run' },
       title: titles[i],
       description: descriptions[i],
-      completed: i <= completed || (i === 4 && state4.state === 'end'),
+      completed: i <= completed || (i === 4 && state4.state === 'end' && completed >= 3),
       active: i == step,
       disabled: i > completed + 1
     };

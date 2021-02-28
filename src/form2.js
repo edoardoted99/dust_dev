@@ -5,9 +5,10 @@ import React from 'react'
 
 import _ from 'lodash'
 import { observable, action, configure } from 'mobx'
-import { observer } from "mobx-react"
-import { Container, Icon, Dimmer, Message, Form, Header, Button, FormField, Input, Label, Divider } from 'semantic-ui-react'
+import { observer } from 'mobx-react'
+import { Container, Icon, Dimmer, Message, Form, Header, Button, Divider } from 'semantic-ui-react'
 import { CooFormState, CooForm } from './cooform.js'
+import { InputUnit } from './inputunit.js'
 
 configure({ enforceActions: 'observed' });
 
@@ -75,21 +76,6 @@ export class Form2State extends CooFormState {
 export const state2 = new Form2State();
 state2.step = 2;
 
-const InputUnit = observer((props) => {
-  const { name, label, unit } = props;
-  // We cannot use directly state2.props below: the error appears in different components
-  const { value, error, onChange } = state2.props(name);
-  return (
-    <FormField error={Boolean(error)} width={props.width}>
-      {label ? <label>{label}</label> : <></>}
-      <Input name={name} value={value} onChange={onChange}
-        label={unit ? { basic: true, content: unit } : null}
-        labelPosition={unit ? 'right' : null}
-        {..._.omit(props, ['name', 'value', 'label', 'unit', 'width'])} />
-      {error ? <Label prompt pointing role='alert'>{error}</Label> : <></>}
-    </FormField>);
-});
-
 const NumComponents = observer((props) => {
   return (
     <Form.Dropdown selection fluid {...state2.props('numComponents')} label='Number of components'
@@ -118,8 +104,8 @@ const ReddeningLaw = observer((props) => {
   return (
     <Form.Group widths='equal'>
       {_.map(state2.bands, (name, i) =>
-        (<InputUnit fluid label={<>A<sub>{name}</sub> / A<sub>ref</sub></>}
-          name={'reddeningLaw[' + i + ']'} key={name} />))}
+      (<InputUnit fluid label={<>A<sub>{name}</sub> / A<sub>ref</sub></>}
+        name={'reddeningLaw[' + i + ']'} key={name} state={state2} />))}
     </Form.Group>
   )
 });
@@ -189,9 +175,9 @@ export const MyForm2 = observer((props) => {
               <p />
           <Form.Group>
             <InputUnit label='Fraction of area to use' placeholder='Fractional area'
-              name='areaFraction' unit='%' width={8} />
+              name='areaFraction' unit='%' width={8} state={state2} />
             <InputUnit label='Fraction of stars to use' placeholder='Fractional stars'
-              name='starFraction' unit='%' width={8} />
+              name='starFraction' unit='%' width={8} state={state2} />
           </Form.Group>
 
           <Header as='h3' dividing>Extreme deconvolution</Header>
@@ -204,7 +190,7 @@ export const MyForm2 = observer((props) => {
           <Form.Group>
             <NumComponents width={4} />
             <InputUnit label='Max extinction' placeholder='max extinction'
-              name='maxExtinction' unit='mag' width={4} />
+              name='maxExtinction' unit='mag' width={4} state={state2} />
             <ExtinctionSteps width={4} />
             <ExtinctionSubsteps width={4} />
           </Form.Group>

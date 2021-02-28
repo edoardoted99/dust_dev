@@ -32,10 +32,17 @@ export class FormState {
    * The function should return `false` if the field is valid, and a string with error message otherwise.
    * @type {{[field: string]: Validator}}
    * @memberof FormState
+   * 
+   * In the current implementation, the list of validators is also used in index.jsx to update the state:
+   * in case of a change of a validated variable, the state is reset. This is done with a mobx.reaction for
+   * each validated variable. Therefore, *all* input values (i.e., all values that correspond to possible
+   * use inputs) *must* have a validator; if all possible values are acceptable, the validator is an _empty_
+   * validator that always returns false.
    * @example
    * validators = { 
    *   name: x => x === '' && 'Please enter your name',
-   *   age: x => x > 0 && 'Your age must be positive'
+   *   age: x => x > 0 && 'Your age must be positive',
+   *   petName: x => false
    * }
    */
   validators = {};
@@ -111,7 +118,7 @@ export class FormState {
      */
     this._orig = this.pull();
     /**
-     * The list of error messages associated to each validate field.
+     * The list of error messages associated to each validated field.
      * @type { {[fieldName: string]: boolean|string;} }
      */
     this.errors = observable(_.mapValues(this.validators, () => null));
@@ -171,10 +178,31 @@ export class FormState {
       let validator = this.validators[v], errors = validator(this[v]);
       this.errors[v] = errors;
       if (_.isArray(errors) || _.isObject(errors)) {
-        for (let e in errors) {
-          if (errors[e]) {
-            when(() => !validator(this[v])[e], () => this.errors[v][e] = false);
-            ok = false;
+        for (let e0 in errors) {
+          let errors0 = errors[e0];
+          if (_.isArray(errors0) || _.isObject(errors0)) {
+            for (let e1 in errors0) {
+              let errors1 = errors0[e1];
+              if (_.isArray(errors1) || _.isObject(errors1)) {
+                for (let e2 in errors1) {
+                  let errors2 = errors1[e2];
+                  if (errors2) {
+                    when(() => !validator(this[v])[e0][e1][e2], () => this.errors[v][e0][e1][e2] = false);
+                    ok = false;
+                  }
+                }
+              } else {
+                if (errors1) {
+                  when(() => !validator(this[v])[e0][e1], () => this.errors[v][e0][e1] = false);
+                  ok = false;
+                }
+              }
+            }
+          } else {
+            if (errors0) {
+              when(() => !validator(this[v])[e0], () => this.errors[v][e0] = false);
+              ok = false;
+            }
           }
         }
       } else {

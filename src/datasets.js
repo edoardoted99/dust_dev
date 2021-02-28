@@ -7,7 +7,11 @@ import logoIRSA from 'url:./logos/IRSA.png';
 // @ts-ignore
 import logo2MASS from 'url:./logos/2MASS.png';
 // @ts-ignore
+import logoWISE from 'url:./logos/WISE.png';
+// @ts-ignore
 import logoEmpty from 'url:./logos/empty.png';
+
+// Footprints from http://alasky.u-strasbg.fr/footprints/tables/vizier/
 
 /**
  * @constant
@@ -17,7 +21,7 @@ import logoEmpty from 'url:./logos/empty.png';
 export const serversDict = {
   VizieRTAP: {
     description: 'VizieR (TAP)',
-    server: 'http://TAPVizieR.u-strasbg.fr/TAPVizieR/tap/',
+    server: 'http://TAPVizieR.u-strasbg.fr/TAPVizieR/tap',
     image: logoVizier
   },
   VizieR: {
@@ -81,6 +85,53 @@ export const datasetsDict = {
       IRSA: [['cc_flg', '=', "'000'"], ['gal_contam', '=', '0'], ['mp_flg', '=', '0']]
     }
   },
+  'AllWISE': {
+    description: 'AllWISE',
+    image: logoWISE,
+    servers: ['VizieR', 'VizieRTAP', 'IRSA'],
+    catalogs: {
+      'VizieR': 'II/328/allwise',
+      'VizieRTAP': '"II/328/allwise"',
+      'IRSA': 'allwise_p3as_psd'
+    },
+    coords: {
+      'VizieR': { E: ['RAJ2000', 'DEJ2000'] },
+      'VizieRTAP': { E: ['RAJ2000', 'DEJ2000'] },
+      'IRSA': { E: ['ra', 'dec'] },
+    },
+    bands: {
+      'VizieR': [
+        ['J', 'Jmag', 'e_Jmag', 2.55],
+        ['H', 'Hmag', 'e_Hmag', 1.55],
+        ['K', 'Kmag', 'e_Kmag', 1.00],
+        ['W1', 'W1mag', 'e_W1mag', 0.80],
+        ['W2', 'W2mag', 'e_W2mag', 0.60],
+        ['W3', 'W3mag', 'e_W3mag', 0.50],
+        ['W4', 'W4mag', 'e_W4mag', 0.40]
+      ],
+      'VizieRTAP': [
+        ['J', 'Jmag', 'e_Jmag', 2.55],
+        ['H', 'Hmag', 'e_Hmag', 1.55],
+        ['K', 'Kmag', 'e_Kmag', 1.00],
+        ['W1', 'W1mag', 'e_W1mag', 0.80],
+        ['W2', 'W2mag', 'e_W2mag', 0.60],
+        ['W3', 'W3mag', 'e_W3mag', 0.50],
+        ['W4', 'W4mag', 'e_W4mag', 0.40]
+      ],
+      'IRSA': [
+        ['J', 'j_m_2mass', 'j_msig_2mass', 2.55],
+        ['H', 'h_m_2mass', 'h_msig_2mass', 1.55],
+        ['K', 'k_m_2mass', 'k_msig_2mass', 1.00],
+        ['W1', 'w1mpro', 'w1sigmpro', 0.80],
+        ['W2', 'w2mpro', 'w2sigmpro', 0.60],
+        ['W3', 'w3mpro', 'w3sigmpro', 0.50],
+        ['W4', 'w4mpro', 'w4sigmpro', 0.40]
+      ]
+    },
+    classes: [],
+    extra: [],
+    extra_robust: []
+  },
   'VISION': {
     description: 'VISION',
     image: logoEmpty,
@@ -113,16 +164,18 @@ export const colorDict = {
     'V': 5,
     'G': 4,
     'R': 1,
-    'I': 0,
-    'Z': 0,
-    'Y': 0,
-    'J': 0,
-    'H': 0,
-    'K': 0,
-    'KS': 0,
-    'L': 0,
-    'M': 0,
-    'N': 0,
-    'Q': 0
+    'I': 0.6,
+    'Z': 0.5,
+    'Y': 0.4,
+    'J': 0.3,
+    'H': 0.2,
+    'K': 0.1,
+    'KS': 0.1,
+    'W1': 0.04,
+    '3-4UM': 0.04,
+    'W2': 0.03,
+    '4-8UM': 0.03,
+    'W3': 0.02,
+    'W4': 0.01
   }
 }

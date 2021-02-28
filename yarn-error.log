@@ -1,5 +1,5 @@
 Arguments: 
-  /Applications/anaconda3/bin/node /Users/mlombard/.yarn/bin/yarn.js add wcs.js
+  /Applications/anaconda3/bin/node /Users/mlombard/.yarn/bin/yarn.js add loadsh-es
 
 PATH: 
   /Users/mlombard/.yarn/bin:/Users/mlombard/.config/yarn/global/node_modules/.bin:/Applications/anaconda3/bin:/Applications/anaconda3/condabin:.:/Users/mlombard/bin:/Applications/anaconda3/bin:/usr/local/bin:/Library/TeX/texbin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/opt/local/bin:/usr/X11R6/bin
@@ -14,7 +14,7 @@ Platform:
   darwin x64
 
 Trace: 
-  Error: https://registry.yarnpkg.com/wcs.js: Not found
+  Error: https://registry.yarnpkg.com/loadsh-es: Not found
       at Request.params.callback [as _callback] (/Users/mlombard/.yarn/lib/cli.js:66988:18)
       at Request.self.callback (/Users/mlombard/.yarn/lib/cli.js:140749:22)
       at Request.emit (events.js:200:13)
@@ -35,10 +35,11 @@ npm manifest:
       "astronomy",
       "dust extinction"
     ],
-    "main": "index.js",
+    "main": "index.html",
     "repository": "https://github.com/astrozot/dust.git",
     "author": "Marco Lombardi <marco.lombardi@gmail.com>",
     "license": "MIT",
+    "sideEffects": false,
     "devDependencies": {
       "@babel/plugin-proposal-decorators": "^7.10.5",
       "@babel/plugin-transform-runtime": "^7.11.5",
@@ -46,6 +47,7 @@ npm manifest:
       "parcel-plugin-static-files-copy": "^2.5.0"
     },
     "dependencies": {
+      "axios": "^0.20.0",
       "mobx": "^5.15.7",
       "mobx-react": "^6.3.0",
       "openseadragon": "^2.4.2",
@@ -57,15 +59,15 @@ npm manifest:
     "staticFiles": {
       "staticPath": [
         {
-          "staticPath": "static/tiles",
-          "staticOutDir": "tiles",
+          "staticPath": "static",
+          "staticOutDir": "static",
           "watcherGlob": "**"
         }
       ]
     },
     "scripts": {
       "start": "parcel serve ./src/index.html --open chrome",
-      "build": "parcel build ./src/index.html"
+      "build": "BUNDLE_BUDDY=1 parcel build ./src/index.html --dist-dir build"
     }
   }
 
@@ -2070,6 +2072,13 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/aws4/-/aws4-1.10.1.tgz#e1e82e4f3e999e2cfd61b161280d16a111f86428"
     integrity sha512-zg7Hz2k5lI8kb7U32998pRRFin7zJlkfezGJjUc2heaD4Pw2wObakCDVzkKztTm/Ln7eiVvYsjqak0Ed4LkMDA==
   
+  axios@^0.20.0:
+    version "0.20.0"
+    resolved "https://registry.yarnpkg.com/axios/-/axios-0.20.0.tgz#057ba30f04884694993a8cd07fa394cff11c50bd"
+    integrity sha512-ANA4rr2BDcmmAQLOKft2fufrtuvlqR+cXNNinUmvfeSNCOF98PZL+7M/v1zIdGo7OLjEA9J2gXJL+j4zGsl0bA==
+    dependencies:
+      follow-redirects "^1.10.0"
+  
   babel-plugin-dynamic-import-node@^2.3.3:
     version "2.3.3"
     resolved "https://registry.yarnpkg.com/babel-plugin-dynamic-import-node/-/babel-plugin-dynamic-import-node-2.3.3.tgz#84fda19c976ec5c6defef57f9427b3def66e17a3"
@@ -3360,7 +3369,7 @@ Lockfile:
       statuses "~1.5.0"
       unpipe "~1.0.0"
   
-  follow-redirects@^1.0.0:
+  follow-redirects@^1.0.0, follow-redirects@^1.10.0:
     version "1.13.0"
     resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.13.0.tgz#b42e8d93a2a7eea5ed88633676d6597bc8e384db"
     integrity sha512-aq6gF1BEKje4a9i9+5jimNFIpq4Q1WiwBToeRK5NvZBd/TRsmW8BsJfOEGkr76TbOyPVD3OVDN910EcUNtRYEA==

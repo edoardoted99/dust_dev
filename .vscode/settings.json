@@ -5,5 +5,8 @@
   "spellright.documentTypes": [
     "markdown",
     "latex"
-  ]
+  ],
+  "python.linting.enabled": true,
+  "python.testing.autoTestDiscoverOnSaveEnabled": false,
+  "python.pythonPath": "/Applications/anaconda3/bin/python"
 }

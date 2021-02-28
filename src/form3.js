@@ -8,9 +8,12 @@ import { observable, computed, configure, action } from 'mobx'
 import { observer } from "mobx-react"
 import { Container, Loader, Dimmer, Form, Header, Button, FormField, Input, Label, Accordion, Icon, Select, Message } from 'semantic-ui-react'
 import { InputAngle } from './inputangle.js'
+import { InputUnit } from './inputunit.js'
 import { FormState } from './formstate.js'
 import { Slider } from './slider.js'
 import { Angle } from './angle.js';
+import { sphereCircle } from './spherical.js'
+import { galactic2equatorial, equatorial2galactic } from './coordinates.js'
 // import './css/slider.css'
 const WCS = require('./wcs.js')
 
@@ -130,6 +133,17 @@ validators = {
     this.latpole = (latpole >= 0) ? ['0', '1', '', '0', '90', ''][latpole] : '';
   }
 
+  handleCoosys(e, { value }) {
+    const crval1 = (new Angle(this.crval1, 'longitude')), crval2 = (new Angle(this.crval2, 'latitude'));
+    if (value === 'galactic') {
+      [crval1.degrees, crval2.degrees] = equatorial2galactic(crval1.degrees, crval2.degrees);
+    } else {
+      [crval1.degrees, crval2.degrees] = galactic2equatorial(crval1.degrees, crval2.degrees);
+    }
+    this.crval1 = crval1.angle;
+    this.crval2 = crval2.angle;
+  }
+
   @computed({ keepAlive: true }) get header() {
     const types = this.coosys === 'galactic' ? ['GLON', 'GLAT'] : ['RA--', 'DEC-'];
     let header;
@@ -162,14 +176,37 @@ validators = {
   }
 
   @action.bound guessWCS() {
-    let lonMin = this.state1.lonMinAngle.degrees, lonMax = this.state1.lonMaxAngle.degrees,
-      latMin = this.state1.latMinAngle.degrees, latMax = this.state1.latMaxAngle.degrees;
-    let crval1, crval2, scale, naxis1, naxis2
-    if (lonMin > lonMax) lonMin -= 360;
-    crval1 = (lonMin + lonMax) * 0.5;
-    if (crval1 < 0) crval1 += 360;
-    crval2 = (latMin + latMax) * 0.5;
-    const aspect = (lonMax - lonMin) * Math.cos(crval2 * Math.PI / 180.0) / (latMax - latMin);
+    let lonMin, lonMax, latMin, latMax;
+    let crval1, crval2, scale, naxis1, naxis2, aspect;
+    if (this.state1.shape === 'R') {
+      lonMin = this.state1.lonMinAngle.degrees;
+      lonMax = this.state1.lonMaxAngle.degrees;
+      latMin = this.state1.latMinAngle.degrees;
+      latMax = this.state1.latMaxAngle.degrees;
+      if (lonMin > lonMax) lonMin -= 360;
+      crval1 = (lonMin + lonMax) * 0.5;
+      if (crval1 < 0) crval1 += 360;
+      crval2 = (latMin + latMax) * 0.5;
+      aspect = (lonMax - lonMin) * Math.cos(crval2 * Math.PI / 180.0) / (latMax - latMin);
+    } else {
+      const s1 = Math.sin(this.state1.radiusAngle.radians);
+      const s2 = Math.sin(Math.PI / 2 - this.state1.latCtrAngle.radians);
+      const delta = (s1 < s2) ? Math.asin(s1 / s2) * 180 / Math.PI : 180;
+      lonMin = this.state1.lonCtrAngle.degrees - delta;
+      lonMax = this.state1.lonCtrAngle.degrees + delta;
+      latMin = Math.max(this.state1.latCtrAngle.degrees - this.state1.radiusAngle.degrees, -90);
+      latMax = Math.min(this.state1.latCtrAngle.degrees + this.state1.radiusAngle.degrees, 90);
+      crval1 = this.state1.lonCtrAngle.degrees;
+      crval2 = this.state1.latCtrAngle.degrees;
+      aspect = 1.0;
+    }
+    if (this.state1.cooSys === 'G' && this.coosys !== 'galactic')
+      // Convert from galactic to equatorial
+      [crval1, crval2] = galactic2equatorial(crval1, crval2);
+    else if (this.state1.cooSys !== 'G' && this.coosys === 'galactic')
+      // Convert from equatorial to galactic
+      [crval1, crval2] = equatorial2galactic(crval1, crval2);
+      
     // scale = _.minBy(goodScales, x => Math.abs(this.starsPerPixel - this.state1.density * x * x / 3600));
     scale = this.scaleArcsec / 3600;
     naxis1 = Math.ceil((Math.floor(Math.sqrt(this.state1.area * aspect) / scale * 1.1) + 20) / 10) * 10;
@@ -195,16 +232,41 @@ validators = {
   }
 
   @action.bound improveWCS(header) {
-    let lonMin = this.state1.lonMinAngle.degrees, lonMax = this.state1.lonMaxAngle.degrees,
-      latMin = this.state1.latMinAngle.degrees, latMax = this.state1.latMaxAngle.degrees;
-    if (lonMin > lonMax) lonMin -= 360;
     const wcs = new WCS();
-    const aspect = Math.sqrt((lonMax - lonMin) * Math.cos((latMax + latMin) * Math.PI / 360.0) / (latMax - latMin));
-    const nx = _.max([Math.round(4 * aspect), 1]) * 2, ny = _.max([Math.round(4 / aspect), 1]) * 2;
-    const xs = _.times(nx + 1, x => lonMin + x * (lonMax - lonMin) / nx);
-    const ys = _.times(ny + 1, y => latMin + y * (latMax - latMin) / ny);
-    let xy = [_.flatten(_.times(ny + 1, _.constant(xs))), _.flatten(_.map(ys, y => _.times(nx + 1, _.constant(y))))];
+    let xy;
+    if (this.state1.shape === 'R') {
+      let lonMin = this.state1.lonMinAngle.degrees, lonMax = this.state1.lonMaxAngle.degrees,
+        latMin = this.state1.latMinAngle.degrees, latMax = this.state1.latMaxAngle.degrees;
+      if (lonMin > lonMax) lonMin -= 360;
+      const aspect = Math.sqrt((lonMax - lonMin) * Math.cos((latMax + latMin) * Math.PI / 360.0) / (latMax - latMin));
+      const nx = _.max([Math.round(4 * aspect), 1]) * 2, ny = _.max([Math.round(4 / aspect), 1]) * 2;
+      const xs = _.times(nx + 1, x => lonMin + x * (lonMax - lonMin) / nx);
+      const ys = _.times(ny + 1, y => latMin + y * (latMax - latMin) / ny);
+      xy = [_.flatten(_.times(ny + 1, _.constant(xs))), _.flatten(_.map(ys, y => _.times(nx + 1, _.constant(y))))];
+    } else {
+      const nr = 5, nt = 32;
+      const lonCtr = this.state1.lonCtrAngle.degrees, latCtr = this.state1.latCtrAngle.degrees,
+        radius = this.state1.radiusAngle.degrees;
+      xy = [[], []];
+      for (let r = 1; r <= nr; r++) {
+        let points = [], rt = Math.ceil(nt * r / nr);
+        sphereCircle(points, lonCtr, latCtr, radius * r / nr, -rt);
+        for (let t = 0; t < rt; t++) {
+          xy[0].push(points[t][0]);
+          xy[1].push(points[t][1]);
+        }
+      }
+    }
     wcs.init(header);
+    if (this.state1.cooSys === 'G' && this.coosys !== 'galactic') {
+      for (let n = 0; n < xy[0].length; n++)
+        [xy[0][n], xy[1][n]] = galactic2equatorial(xy[0][n], xy[1][n]);
+    } else if (this.state1.cooSys !== 'G' && this.coosys === 'galactic') {
+      // Convert from equatorial to galactic
+      for (let n = 0; n < xy[0].length; n++)
+        [xy[0][n], xy[1][n]] = equatorial2galactic(xy[0][n], xy[1][n]);
+    }
+
     for (let n = 0; n < xy[0].length; n++)
       [xy[0][n], xy[1][n]] = wcs.sky2pix(xy[0][n], xy[1][n]);
     // Fix the header
@@ -306,21 +368,6 @@ const FormDensity = observer(() => {
   )
 });
 
-const InputUnit = observer((props) => {
-  const { name, label, unit } = props;
-  // We cannot use directly state3.props below: the error appears in different components
-  const { value, error, onChange } = state3.props(name);
-  return (
-    <FormField error={Boolean(error)} disabled={props.disabled} width={props.width}>
-      {label ? <label>{label}</label> : <></>}
-      <Input name={name} value={value} onChange={onChange}
-        label={unit ? { basic: true, content: unit } : null}
-        labelPosition={unit ? 'right' : null}
-        {..._.omit(props, ['name', 'value', 'label', 'unit', 'width'])} />
-      {error ? <Label prompt pointing role='alert'>{error}</Label> : <></>}
-    </FormField>);
-});
-
 const FormProjection = observer((props) => {
   return (
     <Form.Dropdown selection search fluid width={4} {...state3.props('projection')}
@@ -394,7 +441,8 @@ const FormPV = observer((props) => {
   const disabled = !(values[n] >= 0);
   const unit = (values[n] >= 3) ? '°' : '';
   return (
-    <InputUnit label={`PV2_${n}`} disabled={disabled} placeholder={`pv2_${n}`} name={`pv2[${n}]`} unit={unit} width={4} />
+    <InputUnit label={`PV2_${n}`} disabled={disabled} placeholder={`pv2_${n}`}
+      name={`pv2[${n}]`} unit={unit} width={4} state={state3} />
   );
 });
 
@@ -419,64 +467,139 @@ const FormMessage = observer(() => {
 });
 
 export const FormSVG = observer((props) => {
-  const line = (wcs, lonMin, lonMax, latMin, latMax, npts = 33) => {
-    const lonStep = (lonMax - lonMin) / (npts - 1), latStep = (latMax - latMin) / (npts - 1);
-    const xs = Array(npts), ys = Array(npts);
-    for (let n = 0; n < npts; n++) {
-      [xs[n], ys[n]] = wcs.sky2pix(lonMin + n * lonStep, latMin + n * latStep);
+  const svgPath = (xs, ys, closed = false) => {
+    const npts = xs.length;
+    let dx, dy, svg = [`${closed ? 'M ' : ''}${xs[0]},${ys[0]}`];
+    if (closed) {
+      dx = (xs[1] - xs[npts - 2]) / 6, dy = (ys[1] - ys[npts - 2]) / 6;
+      svg.push(`C ${xs[0] + dx},${ys[0] + dy}`);
+    } else {
+      svg.push(`C ${(xs[0] * 2 + xs[1]) / 3},${(ys[0] * 2 + ys[1]) / 3}`);
     }
-    let dx = (xs[2] - xs[0]) / 6, dy = (ys[2] - ys[0]) / 6;
-    let svg = [
-      `${xs[0]},${ys[0]}`,
-      `C ${(xs[0] * 2 + xs[1]) / 3},${(ys[0] * 2 + ys[1]) / 3}`,
-      `${xs[1] - dx},${ys[1] - dy}`,
-      `${xs[1]},${ys[1]}`
-    ];
+    dx = (xs[2] - xs[0]) / 6, dy = (ys[2] - ys[0]) / 6;
+    svg.push(`${xs[1] - dx},${ys[1] - dy}`);
+    svg.push(`${xs[1]},${ys[1]}`);
     for (let n = 2; n < npts - 1; n++) {
       dx = (xs[n + 1] - xs[n - 1]) / 6, dy = (ys[n + 1] - ys[n - 1]) / 6;
       svg.push(`S ${xs[n] - dx},${ys[n] - dy} ${xs[n]},${ys[n]}`)
     }
-    svg.push(`S ${(xs[npts - 1] * 2 + xs[npts - 2]) / 3},${(ys[npts - 1] * 2 + ys[npts - 2]) / 3}`);
+    if (closed) {
+      dx = (xs[1] - xs[npts - 2]) / 6, dy = (ys[1] - ys[npts - 2]) / 6;
+      svg.push(`S ${xs[npts - 1] - dx},${ys[npts - 1] - dy}`);
+    } else {
+      svg.push(`S ${(xs[npts - 1] * 2 + xs[npts - 2]) / 3},${(ys[npts - 1] * 2 + ys[npts - 2]) / 3}`);
+    }
     svg.push(`${xs[npts - 1]},${ys[npts - 1]}`);
+    if (closed) svg.push('Z');
     return svg.join(' ');
   }
-  
-  let lonMin = state3.state1.lonMinAngle.degrees, lonMax = state3.state1.lonMaxAngle.degrees,
-    latMin = state3.state1.latMinAngle.degrees, latMax = state3.state1.latMaxAngle.degrees;
-  if (lonMin > lonMax) lonMin -= 360;
+  const line = (wcs, lonMin, lonMax, latMin, latMax, npts = 33) => {
+    const lonStep = (lonMax - lonMin) / (npts - 1), latStep = (latMax - latMin) / (npts - 1);
+    const xs = Array(npts), ys = Array(npts);
+
+    for (let n = 0; n < npts; n++) {
+      xs[n] = lonMin + n * lonStep;
+      ys[n] = latMin + n * latStep
+    }
+    if (state3.state1.cooSys === 'G' && state3.coosys !== 'galactic') {
+      for (let n = 0; n < npts; n++)
+        [xs[n], ys[n]] = galactic2equatorial(xs[n], ys[n]);
+    } else if (state3.state1.cooSys !== 'G' && state3.coosys === 'galactic') {
+      // Convert from equatorial to galactic
+      for (let n = 0; n < npts; n++)
+        [xs[n], ys[n]] = equatorial2galactic(xs[n], ys[n]);
+    }
+    for (let n = 0; n < npts; n++) {
+      [xs[n], ys[n]] = wcs.sky2pix(xs[n], ys[n]);
+    }
+    return svgPath(xs, ys);
+  }
+  const circle = (wcs, lonCtr, latCtr, radius, npts = 33) => {
+    let points = [];
+    const xs = Array(npts), ys = Array(npts);
+    sphereCircle(points, lonCtr, latCtr, radius, -npts);
+    if (state3.state1.cooSys === 'G' && state3.coosys !== 'galactic') {
+      for (let n = 0; n < npts; n++)
+        [points[n][0], points[n][1]] = galactic2equatorial(points[n][0], points[n][1]);
+    } else if (state3.state1.cooSys !== 'G' && state3.coosys === 'galactic') {
+      // Convert from equatorial to galactic
+      for (let n = 0; n < npts; n++)
+        [points[n][0], points[n][1]] = equatorial2galactic(points[n][0], points[n][1]);
+    }
+    for (let n = 0; n < npts; n++) {
+      [xs[n], ys[n]] = wcs.sky2pix(points[n][0], points[n][1]);
+    }
+    return svgPath(xs, ys, true);
+  }
+
   const wcs = new WCS();
+  const header = state3.header;
+  const n1 = header.NAXIS1, n2 = header.NAXIS2, b = _.max([n1 / 10, n2 / 10, 20]);
+  wcs.init(header);
+
+  let lonMin, lonMax, latMin, latMax;
+  let lonCtr = state3.state1.lonCtrAngle.degrees, latCtr = state3.state1.latCtrAngle.degrees,
+    radius = state3.state1.radiusAngle.degrees, c = Math.cos(state3.state1.latCtrAngle.radians);
+  if (state3.state1.shape === 'R') {
+    lonMin = state3.state1.lonMinAngle.degrees;
+    lonMax = state3.state1.lonMaxAngle.degrees;
+    latMin = state3.state1.latMinAngle.degrees;
+    latMax = state3.state1.latMaxAngle.degrees;
+    if (lonMin > lonMax) lonMin -= 360;
+  } else {
+    const s1 = Math.sin(state3.state1.radiusAngle.radians);
+    const s2 = Math.sin(Math.PI / 2 - state3.state1.latCtrAngle.radians);
+    const delta = (s1 < s2) ? Math.asin(s1 / s2) * 180 / Math.PI : 180;
+    lonMin = state3.state1.lonCtrAngle.degrees - delta;
+    lonMax = state3.state1.lonCtrAngle.degrees + delta;
+    latMin = Math.max(state3.state1.latCtrAngle.degrees - state3.state1.radiusAngle.degrees, -90);
+    latMax = Math.min(state3.state1.latCtrAngle.degrees + state3.state1.radiusAngle.degrees, 90);
+  }
   const aspect = Math.sqrt((lonMax - lonMin) * Math.cos((latMax + latMin) * Math.PI / 360.0) / (latMax - latMin));
   const nx = _.max([Math.round(4 * aspect), 1]) * 2, ny = _.max([Math.round(4 / aspect), 1]) * 2;
   const lonStep = (lonMax - lonMin) / nx, latStep = (latMax - latMin) / ny;
-  const header = state3.header;
-  wcs.init(header);
-  const n1 = header.NAXIS1, n2 = header.NAXIS2, b = _.max([n1/10, n2/10, 20]);
-
+  const cone = state3.state1.shape === 'C';
   return (
-    <svg height='400' width='400' viewBox={`${-b} ${-b} ${n1 + 2*b} ${n2 + 2*b}`}
+    <svg height='400' width='400' viewBox={`${-b} ${-b} ${n1 + 2 * b} ${n2 + 2 * b}`}
       preserveAspectRatio='xMinYMin meet'>
       <defs>
         <clipPath id='paper'>
           <path d={`M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`} />
         </clipPath>
-      </defs> 
+        {cone ?
+          <clipPath id='fov'>
+            <path d={circle(wcs, lonCtr, latCtr, radius)} />
+          </clipPath>
+          :
+          <clipPath id='fov'>
+            <path d={`M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`} />
+          </clipPath>
+        }
+      </defs>
       <g clipPath='url(#paper)' transform={`scale(1, -1) translate(0, -${n2})`}>
-        {_.times(nx - 1, (n) =>
-          <path d={'M ' + line(wcs, lonMin + lonStep * (n + 1), lonMin + lonStep * (n + 1), latMin, latMax)}
-            fill='none' stroke='grey' strokeWidth='1' vectorEffect='non-scaling-stroke' key={`x${n}`} />)}
-        {_.times(ny - 1, (n) =>
-          <path d={'M ' + line(wcs, lonMin, lonMax, latMin + latStep * (n + 1), latMin + latStep * (n + 1))}
-            fill='none' stroke='grey' strokeWidth='1' vectorEffect='non-scaling-stroke' key={`y${n}`} />)}
-        <path d={
-          'M ' + line(wcs, lonMax, lonMin, latMin, latMin) + ' L ' + line(wcs, lonMin, lonMin, latMin, latMax) +
-          ' L ' + line(wcs, lonMin, lonMax, latMax, latMax) + ' L ' + line(wcs, lonMax, lonMax, latMax, latMin) + ' Z'}
-          fill='none' stroke='black' strokeWidth='2' vectorEffect='non-scaling-stroke' key='C'/>
+        <g clipPath='url(#fov)'>
+          {_.times(nx + 1, (n) =>
+            <path d={'M ' + line(wcs, lonMin + lonStep * n, lonMin + lonStep * n, latMin, latMax)}
+              fill='none' stroke='grey' strokeWidth='1' vectorEffect='non-scaling-stroke' key={`x${n}`} />)}
+          {_.times(ny + 1, (n) =>
+            <path d={'M ' + line(wcs, lonMin, lonMax, latMin + latStep * n, latMin + latStep * n)}
+              fill='none' stroke='grey' strokeWidth='1' vectorEffect='non-scaling-stroke' key={`y${n}`} />)}
+        </g>
+        {cone ?
+          <path d={circle(wcs, lonCtr, latCtr, radius)}
+            fill='none' stroke='black' strokeWidth='2' vectorEffect='non-scaling-stroke' key='C' />
+          :
+          <path d={
+            'M ' + line(wcs, lonMax, lonMin, latMin, latMin) + ' L ' + line(wcs, lonMin, lonMin, latMin, latMax) +
+            ' L ' + line(wcs, lonMin, lonMax, latMax, latMax) + ' L ' + line(wcs, lonMax, lonMax, latMax, latMin) + ' Z'}
+            fill='none' stroke='black' strokeWidth='2' vectorEffect='non-scaling-stroke' key='C' />
+        }
         <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`}
           fill='red' stroke='none' fillOpacity='0.5' vectorEffect='non-scaling-stroke' key='F1' />
         <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`}
-          fill='white' stroke='none' fillOpacity='0.8' vectorEffect='non-scaling-stroke' key='F2'/>
+          fill='white' stroke='none' fillOpacity='0.8' vectorEffect='non-scaling-stroke' key='F2' />
         <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z`} fill='none' stroke='red' strokeWidth={1}
-          vectorEffect='non-scaling-stroke' key='F3'/>
+          vectorEffect='non-scaling-stroke' key='F3' />
       </g>
     </svg>
   );
@@ -560,16 +683,16 @@ export function MyForm3(props) {
           <Header as='h4' dividing>Image coordinate system</Header>
           <Form.Group>
             <InputUnit label='Image width' placeholder='naxis1'
-              name='naxis1' unit='px' width={8} />
+              name='naxis1' unit='px' width={8} state={state3} />
             <InputUnit label='Image height' placeholder='naxis2'
-              name='naxis2' unit='px' width={8} />
+              name='naxis2' unit='px' width={8} state={state3} />
           </Form.Group>
 
           <Form.Group>
             <InputUnit label='X of reference pixel' placeholder='crpix1'
-              name='crpix1' unit='px' width={8} />
+              name='crpix1' unit='px' width={8} state={state3} />
             <InputUnit label='Y of reference pixel' placeholder='crpix2'
-              name='crpix2' unit='px' width={8} />
+              name='crpix2' unit='px' width={8} state={state3} />
           </Form.Group>
           <Form.Group>
             <FormAngle width={8} placeholder='crval1' name='crval1' type='longitude' />
@@ -582,7 +705,7 @@ export function MyForm3(props) {
           <Form.Group>
             <FormScale width={8} />
             <InputUnit label='Rotation angle' placeholder='rot'
-              name='crota2' unit='°' width={8} />
+              name='crota2' unit='°' width={8} state={state3} />
           </Form.Group>
 
           <Accordion as='h4'>
@@ -594,9 +717,9 @@ export function MyForm3(props) {
             <Accordion.Content active={advanced} >
               <Form.Group>
                 <InputUnit label='Native longitude of celestial pole' placeholder='lonpole'
-                  name='lonpole' unit='°' width={8} />
+                  name='lonpole' unit='°' width={8} state={state3} />
                 <InputUnit label='Native latitude of celestial pole' placeholder='latpole'
-                  name='latpole' unit='°' width={8} />
+                  name='latpole' unit='°' width={8} state={state3} />
               </Form.Group>
               <Form.Group>
                 <FormPV n={0} />
@@ -610,9 +733,9 @@ export function MyForm3(props) {
           <Header as='h4' dividing>Smoothing algorithm</Header>
           <Form.Group>
             <InputUnit label='Smoothing FWHM' placeholder='resolution'
-              name='smoothpar' unit='px' width={8} />
+              name='smoothpar' unit='px' width={8} state={state3} />
             <InputUnit label='Clipping' placeholder='clipping'
-              name='clipping' unit='σ' width={4} />
+              name='clipping' unit='σ' width={4} state={state3} />
             <FormIterations />
           </Form.Group>
 

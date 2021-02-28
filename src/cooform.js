@@ -151,7 +151,7 @@ export class CooFormState extends FormState {
     latMin: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
     lonMax: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
     latMax: x => (this.shape === 'R' && x.length <= 1) && 'Please enter a valid coordinate',
-    // Empty validators
+    // Empty validators, used to update the step in index.jsx
     cooSys: x => false,
     shape: x => false,
     object: x => false,
@@ -276,14 +276,15 @@ export class CooFormState extends FormState {
    * @memberof CooFormState
    */
   @computed({ keepAlive: true }) get area() {
+    const r2d = 180 / Math.PI
     if (this.shape === 'R') {
-      let lonMin = this.lonMinAngle.degrees, lonMax = this.lonMaxAngle.degrees,
-        latMin = this.latMinAngle.degrees, latMax = this.latMaxAngle.degrees;
-      if (lonMin > lonMax) lonMin -= 360;
-      return Math.abs((lonMax - lonMin) * 180.0 / Math.PI *
-        (Math.sin(latMax * Math.PI / 180.0) - Math.sin(latMin * Math.PI / 180.0)));
+      let lonMin = this.lonMinAngle.radians, lonMax = this.lonMaxAngle.radians,
+        latMin = this.latMinAngle.radians, latMax = this.latMaxAngle.radians;
+      if (lonMin > lonMax) lonMin -= 2 * Math.PI;
+      return Math.abs((lonMax - lonMin) * r2d * r2d *
+        (Math.sin(latMax) - Math.sin(latMin)));
     } else {
-      return (1 - Math.cos(this.radiusAngle.degrees * Math.PI / 180.0)) * 360.0 * 180.0 / Math.PI;
+      return (1 - Math.cos(this.radiusAngle.radians)) * 360.0 * r2d;
     }
   }
 
@@ -345,7 +346,7 @@ export class CooFormState extends FormState {
           this.latCtrAngle = lat;
           if (size) {
             if (this.shape === 'R') {
-              const c = Math.cos(lat.degrees * Math.PI / 180.0)
+              const c = Math.cos(lat.radians)
               this.lonWdtAngle = (new Angle(size / c / (this.cooSys === 'E' ? 15 : 1),
                 this.cooSys === 'E' ? 'hms' : 'longitude', 2));
               this.latWdtAngle = (new Angle(size, 'longitude', 2));
@@ -502,7 +503,7 @@ export class CooFormState extends FormState {
   }
 
   @action.bound handleShapeChange(e, { name, value, checked }) {
-    const c = Math.cos(this.latCtrAngle.degrees * Math.PI / 180);
+    const c = Math.cos(this.latCtrAngle.radians);
     this.handleChange(e, { name, value, checked });
     if (value === 'C' && checked) {
       if (this.lonWdt && this.latWdt) {

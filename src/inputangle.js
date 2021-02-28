@@ -124,6 +124,9 @@ export class InputAngle extends React.Component {
    */
   handleBlur(e) {
     let fixedValue = this.fixInput(this.props.value + ' ');
+    // Next two lines are used to convert 1° 65'  ->  2° 5'
+    let a = new Angle(fixedValue, this.props.type);
+    if (Number.isFinite(a.value)) fixedValue = a.angle;
     if (this.props.value != fixedValue) {
       if (this.props.onChange) this.props.onChange(e, { ...this.props, value: fixedValue });
     }

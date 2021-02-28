@@ -16,7 +16,7 @@ import pyvo as vo
 import cherrypy
 from astropy.io import fits
 from astropy.table import Table, vstack
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Angle
 from astroquery.vizier import Vizier
 import multiprocessing as mp
 import astropy.wcs
@@ -44,6 +44,17 @@ def getSession():
 
 class StaticServer:
     pass
+
+import requests
+
+class ProxyServer:
+    @cherrypy.expose
+    def index(self, url):
+        # modify the url base and return the data/headers processed by another web server
+        response = requests.get(url)
+        # cherrypy.response.headers.update(response.headers)
+        cherrypy.response.headers['Content-Type'] = response.headers['Content-Type']
+        return response.text
 
 class AppServer:
     """Main app server class."""
@@ -115,11 +126,48 @@ class AppServer:
     @cherrypy.expose
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
+    def discover_table(self):
+        """Contact the server and find out the available columns.
+
+        Uses the provided server and catalogs and tries to retrieve the first
+        line of each catalog.
+        """
+        getSession()
+        data = cherrypy.request.json
+        try:
+            if data['server'] == 'vizier':
+                my_vizier = Vizier()
+                my_vizier.ROW_LIMIT = 1
+                result = my_vizier.query_constraints(catalog=data['catalogs'][0])
+                if len(result) == 0:
+                    raise ValueError
+                result = result[0]
+            else:
+                service = vo.dal.TAPService(data['server'])
+                query = f"SELECT TOP 1 *\nFROM {data['catalogs'][0]}"
+                result = service.search(query, maxrec=3).to_table()
+            columns=[]
+            for name, col in result.columns.items():
+                columns.append((col.name, str(col.dtype),
+                                str(col.unit), col.description))
+            return {'success': True, 'columns': columns}
+        except (vo.dal.DALQueryError, ValueError):
+            return {'error': True, 'header': 'Catalog unavailable',
+                    'content': 'The catalog is not available in the selected server.'}
+        except Exception:
+            return {'error': True, 'header': 'Server down',
+                    'content': 'The server is not responding: please select a different server.'}
+
+    @cherrypy.expose
+    @cherrypy.tools.json_in()
+    @cherrypy.tools.json_out()
     def count_stars(self):
         """Count the approximate number of stars for a query.
 
         Uses the provided boundaries in galactic coordinates and the specified
         dataset. The estimate is performed using a density map in healpy format.
+        
+        The data are taken from 
         """
         getSession()
         data = cherrypy.request.json
@@ -152,7 +200,10 @@ class AppServer:
         else:
             star_number = f'~{(nstars // 100000) / 10} millions'
         if nstars < MAX_OBJS and data['start_query']:
-            job_urls = self.start_tap_query()
+            if data['server'] == 'vizier':
+                job_urls = self.start_vizier_query()
+            else:
+                job_urls = self.start_tap_query()
         else:
             job_urls = []
         if nstars > MAX_OBJS:
@@ -184,38 +235,59 @@ class AppServer:
         session = getSession()
         coords = data['coords']
         coo_sys = data['coo_sys']
-        if coo_sys in coords or data['server'] == 'vizier':
-            lon_name = coords[coo_sys][0]
-            lat_name = coords[coo_sys][1]
-            lon_min = data['lon_min']
-            lon_max = data['lon_max']
-            lat_min = data['lat_min']
-            lat_max = data['lat_max']
-            if data['server'] == 'vizier':
-                constraints = {}
-                if lon_min < lon_max:
-                    constraints[lon_name] = f'>={lon_min} & <={lon_max}'
+        shape = data['shape']
+        if shape == 'R':
+            if coo_sys in coords or data['server'] == 'vizier':
+                lon_name = coords[coo_sys][0]
+                lat_name = coords[coo_sys][1]
+                lon_min = data['lon_min']
+                lon_max = data['lon_max']
+                lat_min = data['lat_min']
+                lat_max = data['lat_max']
+                if data['server'] == 'vizier':
+                    constraints = {}
+                    if lon_min < lon_max:
+                        constraints[lon_name] = f'>={lon_min} & <={lon_max}'
+                    else:
+                        constraints[lon_name] = f'>={lon_min} | <={lon_max}'
+                    constraints[lat_name] = f'>={lat_min} & <={lat_max}'
                 else:
-                    constraints[lon_name] = f'>={lon_min} | <={lon_max}'
-                constraints[lat_name] = f'>={lat_min} & <={lat_max}'
+                    if lon_min < lon_max:
+                        constraints = f'{lon_name}>={lon_min} AND {lon_name}<={lon_max} AND ' \
+                            f'{lat_name}>={lat_min} AND {lat_name}<={lat_max}'
+                    else:
+                        constraints = f'({lon_name}>={lon_min} OR {lon_name}<={lon_max}) AND ' \
+                            f'{lat_name}>={lat_min} AND {lat_name}<={lat_max}'
             else:
-                if lon_min < lon_max:
-                    constraints = f'{lon_name}>={lon_min} AND {lon_name}<={lon_max} AND ' \
-                        f'{lat_name}>={lat_min} AND {lat_name}<={lat_max}'
-                else:
-                    constraints = f'({lon_name}>={lon_min} OR {lon_name}<={lon_max}) AND ' \
-                        f'{lat_name}>={lat_min} AND {lat_name}<={lat_max}'
+                lon_ctr = data['lon_ctr']
+                lon_wdt = data['lon_wdt']
+                lat_ctr = data['lat_ctr']
+                lat_wdt = data['lat_wdt']
+                coo_codes = {'E': 'ICRS', 'G': 'GALACTIC'}
+                k = 'E' if 'E' in coords else list(coords.keys())[0]
+                lon_name = coords[k][0]
+                lat_name = coords[k][1]
+                constraints = f"1=CONTAINS(POINT('{coo_codes[k]}', {lon_name}, {lat_name}), " + \
+                    f"BOX('{coo_codes[coo_sys]}', {lon_ctr}, {lat_ctr}, {lon_wdt}, {lat_wdt}))"
         else:
             lon_ctr = data['lon_ctr']
-            lon_wdt = data['lon_wdt']
             lat_ctr = data['lat_ctr']
-            lat_wdt = data['lat_wdt']
-            coo_codes = {'E': 'icrs', 'G': 'galactic'}
+            radius = data['radius']
+            coo_codes = {'E': 'ICRS', 'G': 'GALACTIC'}
             k = 'E' if 'E' in coords else list(coords.keys())[0]
             lon_name = coords[k][0]
             lat_name = coords[k][1]
+            if coo_sys != k:
+                center = SkyCoord(lon_ctr, lat_ctr, frame=coo_codes[coo_sys].lower(), 
+                                  unit='deg')
+                if k == 'E':
+                    lon_ctr = center.icrs.ra.value
+                    lat_ctr = center.icrs.dec.value
+                else:
+                    lon_ctr = center.galactic.l.value
+                    lat_ctr = center.galacrtic.b.value
             constraints = f"1=CONTAINS(POINT('{coo_codes[k]}', {lon_name}, {lat_name}), " + \
-                f"BOX('{coo_codes[coo_sys]}', {lon_ctr}, {lat_ctr}, {lon_wdt}, {lat_wdt}))"
+                f"CIRCLE('{coo_codes[k]}', {lon_ctr}, {lat_ctr}, {radius}))"
         if len(data['conditions']) > 0:
             if data['server'] == 'vizier':
                 for field, sign, value in data['conditions']:
@@ -225,8 +297,49 @@ class AppServer:
                         constraints[field] = f'{constraints[field]} & {sign}{value}'
             else:
                 constraints += f" AND {' AND '.join([c[0] + c[1] + c[2] for c in data['conditions']])}"
-        job_urls = self.execute_query(step, data['server'], data['catalogs'], 
-                                      data['fields'], constraints)
+        job_urls = self.execute_tap_query(step, data['server'], data['catalogs'], 
+                                          data['fields'], constraints)
+        session['step'] = step
+        return job_urls
+
+    @cherrypy.expose
+    @cherrypy.tools.json_in()
+    @cherrypy.tools.json_out()
+    def start_vizier_query(self):
+        """Initiate a VizieR query.
+
+        The query is based on the provided query string, with added geometric
+        constraint.
+        
+        The query is repeated for all catalogs indicated in the FROM part of the
+        query.
+        """
+        data = cherrypy.request.json
+        step = data['step']
+        session = getSession()
+        coords = data['coords']
+        coo_sys = data['coo_sys']
+        shape = data['shape']
+        lon_ctr = data['lon_ctr']
+        lat_ctr = data['lat_ctr']
+        coo_codes = {'E': 'ICRS', 'G': 'GALACTIC'}
+        center = SkyCoord(lon_ctr, lat_ctr, frame=coo_codes[coo_sys].lower(),
+                          unit='deg')
+        if shape == 'R':
+            geometry = {'width': Angle(data['lon_wdt'], 'deg'), 
+                        'height': Angle(data['lat_wdt'], 'deg')}
+        else:
+            geometry = {'radius': Angle(data['radius'], 'deg')}
+        constraints = {}
+        if len(data['conditions']) > 0:
+            for field, sign, value in data['conditions']:
+                if field not in constraints:
+                    constraints[field] = f'{sign}{value}'
+                else:
+                    constraints[field] = f'{constraints[field]} & {sign}{value}'
+        job_urls = self.execute_vizier_query(step, data['server'], data['catalogs'],
+                                             data['fields'], 
+                                             center, geometry, constraints)
         session['step'] = step
         return job_urls
 
@@ -246,31 +359,27 @@ class AppServer:
         process_state = self._process_state(session)
         res = {'success': True, 'header': 'Connection established',
                'content': 'The server has accepted the connection and has started the pipeline.'}
-        if process_state != 'run':
-            try:
-                if not process_state:
-                    # First run: set the data
-                    data = cherrypy.request.json
-                    session['data_3'] = data['data']
-                    with open(f'process_{session.id}.dat', 'wb') as f:
-                        pickle.dump(session.id, f)
-                        pickle.dump(session['data_3'], f)
-                session['process_log'] = process_log = manager.list([])
-                proc = pool.apply_async(
-                    self.do_process, 
-                    (session.id, process_log, session['data_3']))
-                session['process'] = proc
-            except Exception as e:
-                res = {'error': True, 'header': 'Pipeline error',
-                       'content':
-                           f'Error {"re" if process_state else ""}starting the pipeline for session ID {session.id}:\n{e}'}
-                logging.exception('Fatal error during process %s', 
-                                  'restart' if process_state else 'creation')
-        else:
+        if process_state == 'run':
+            # Process started already: we stop it!
+            self.stop_process()
+        try:
+            data = cherrypy.request.json
+            if 'data' in data:
+                session['data_3'] = data['data']
+            with open(f'process_{session.id}.dat', 'wb') as f:
+                pickle.dump(session.id, f)
+                pickle.dump(session['data_3'], f)
+            session['process_log'] = process_log = manager.list([])
+            proc = pool.apply_async(
+                self.do_process, 
+                (session.id, process_log, session['data_3']))
+            session['process'] = proc
+        except Exception as e:
             res = {'error': True, 'header': 'Pipeline error',
-                   'content:': 
-                       f'Error: sessioon ID {session.id} has already a running process'}
-            logging.exception('Fatal error during process creation: process already started')
+                    'content':
+                        f'Error {"re" if process_state else ""}starting the pipeline for session ID {session.id}:\n{e}'}
+            logging.exception('Fatal error during process %s', 
+                                'restart' if process_state else 'creation')
         return {'message': res, 'logs': list(process_log)}
 
     @cherrypy.expose
@@ -285,14 +394,14 @@ class AppServer:
             logging.info('%s', message)
             if len(process_log) > 0:
                 time = process_log[-1]['time']
-                percent = process_log[-1]['percent']
+                step = process_log[-1]['step']
             else:
                 time = 0.0
-                percent = 0
+                step = 0
             process_log.append(
                 {'time': time,
                  'state': 'abort',
-                 'percent': percent,
+                 'step': step,
                  'message': message})
             res = {'success': True, 'header': 'Aborting', 'content': message}
         else:
@@ -344,6 +453,8 @@ class AppServer:
     @classmethod
     def do_abort_queries(cls, job_urls):
         for job_url in job_urls:
+            if job_url[:9] == 'vizier://':
+                continue
             try:
                 job = vo.dal.tap.AsyncTAPJob(job_url)
                 job.delete()
@@ -361,29 +472,32 @@ class AppServer:
             interactive_mode = False
         t0 = time.perf_counter()
 
-        def info(percent, message, state='run'):
-            logging.info('%s', message)
+        def info(step, message, state='run'):
+            if len(message) and message[0] == '%':
+                if len(process_log) > 0 and process_log[-1]['message'][0] == '%':
+                    process_log.pop()
+            else:
+                logging.info('%s', message)
             if len(process_log) > 0 and process_log[-1]['state'] == 'abort':
                 raise KeyboardInterrupt
-            if percent < 0:
+            if step < 0:
                 if len(process_log) > 0:
-                    percent = process_log[-1]['percent']
+                    step = process_log[-1]['step']
                 else:
-                    percent = 0
+                    step = 0
             return process_log.append(
                 {'time': time.perf_counter() - t0,
                  'state': state,
-                 'percent': percent,
+                 'step': step,
                  'message': message})
         try:
-            # FIXME: Remove next line
-            print(data_pr)
             info(1, f'Starting (session id: {id})')
-            info(2, f'Retrieving control field data: expecting {data_pr["nstars_cf"]:,.0f} objects')
+            info(1, f'Retrieving control field data: expecting {data_pr["nstars_cf"]:,.0f} objects')
             cf_data = cls.retrieve_data(id, 2, data_pr['urls_cf'], 
-                                        logger=lambda message: info(2, message))
-            info(8, f'{len(cf_data):,.0f} objects found')
-            info(8, 'Converting photometric data')
+                                        logger=lambda message: info(2, message),
+                                        expected=data_pr["nstars_cf"])
+            info(3, f'{len(cf_data):,.0f} objects found')
+            info(3, 'Converting photometric data')
             phot_c = PhotometricCatalogue.from_table(
                 cf_data, data_pr['mags'], data_pr['magErrs'],
                 reddening_law=data_pr['reddeningLaw'],
@@ -392,13 +506,14 @@ class AppServer:
                 class_prob_names=data_pr['morphclass'],
                 log_class_probs=False, dtype=np.float64)
             phot_c.add_log_probs()
-            info(10, f'{len(phot_c):,.0f} objects with two or more bands')
-            info(10, 'Fitting number counts and uncertainties')
+            info(4, f'{len(phot_c):,.0f} objects with two or more bands')
+            info(4, 'Fitting number counts and uncertainties')
             phot_c.fit_number_counts()
             phot_c.fit_phot_uncertainties()
             # Check wich coordinates to use
             wcs = data_pr['wcs']
             if wcs['coosys'] == 'galactic':
+                wcs_frame = 'galactic'
                 if 'G' in data_pr['coords']:
                     frame = 'galactic'
                     coords = data_pr['coords']['G']
@@ -406,15 +521,16 @@ class AppServer:
                     frame = 'icrs'
                     coords = data_pr['coords']['E']
             else:
+                wcs_frame = 'icrs'
                 if 'E' in data_pr['coords']:
                     frame = 'icrs'
                     coords = data_pr['coords']['E']
                 else:
                     frame = 'galactic'
                     coords = data_pr['coords']['G']
-            info(11, f'Using coordinates in the {frame} frame')
+            info(5, f'Using coordinates in the {frame} frame')
             if data_pr['starFraction'] < 100 or data_pr['areaFraction'] < 100:
-                info(11, f'Selection of control field objects')
+                info(5, f'Selection of control field objects')
                 # We model control field data with a single Gaussian blob
                 xd0 = XDGaussianMixture(n_components=1, n_classes=1)
                 xnicer0 = XNicer(xd0, [0.0])
@@ -425,11 +541,11 @@ class AppServer:
                 coord_c0 = AstrometricCatalogue.from_table(
                     cf_data, coords, unit='deg', frame=frame)
                 # Guessing the control field WCS
-                w0 = guess_wcs(getattr(coord_c0, wcs['coosys']), 
+                w0 = guess_wcs(getattr(coord_c0, wcs_frame), 
                                nobjs=len(ext_c0), target_density=5.0)
                 smoother0 = KDE(tuple(reversed(w0.pixel_shape)), max_power=2,
                                 bandwidth=2.0)
-                hdu0 = make_maps(getattr(coord_c0, wcs['coosys']), ext_c0, w0,
+                hdu0 = make_maps(getattr(coord_c0, wcs_frame), ext_c0, w0,
                                  smoother0, n_iters=3, tolerance=3.0, use_xnicest=False)
                 cmap0 = hdu0.data[0, :, :]
                 civar0 = hdu0.data[1, :, :]
@@ -449,24 +565,24 @@ class AppServer:
                 sel4 = np.where(mask[(np.round(xy[1])).astype(int), (np.round(xy[0])).astype(int)])
                 phot_c = phot_c[sel4]
                 ext_c0 = ext_c0[sel4]
-                info(13, f'Selected {len(phot_c):,.0f} objects from the control field extinction map')
+                info(5, f'Selected {len(phot_c):,.0f} objects from the control field extinction map')
                 srt2 = np.argsort(ext_c0['mean_A'])
                 sel5 = srt2[0:int(len(phot_c) * data_pr['starFraction'])]
                 phot_c = phot_c[sel5]
-                info(14, f'Selected {len(phot_c):,.0f} objects from individual extinctions')
-            info(15, 'Performing the extreme deconvolution')
+                info(5, f'Selected {len(phot_c):,.0f} objects from individual extinctions')
+            info(5, 'Performing the extreme deconvolution')
             xd = XDGaussianMixture(n_components=data_pr['numComponents'], 
                                    n_classes=2 if data_pr['morphclass'] else 1)
             xnicer = XNicer(xd, np.linspace(0.0, data_pr['maxExtinction'], 
                                             data_pr['extinctionSteps']))
             xnicer.fit(phot_c)
-            info(40, 'Performing the control field a-posteriori calibration')
+            info(6, 'Performing the control field a-posteriori calibration')
             xnicer.calibrate(phot_c, 
                              np.linspace(
                                 -1.0, data_pr['maxExtinction'], 
                                 data_pr['extinctionSteps']*data_pr['extinctionSubsteps']),
                              update_errors=False)
-            info(65, 'Control field analysis')
+            info(7, 'Control field analysis')
             # Compute the extinction from the color catalogue
             ext_c = xnicer.predict(phot_c.get_colors())
             # Compute the weights as the inverse of each extinction measurement
@@ -482,13 +598,14 @@ class AppServer:
             err_c = np.sqrt(np.mean(ext_c['variance_A'] * weight_c**2))
             # We also make an histogram plot with the next line, but we don't here!
             # plt.hist(ext_c['mean_A'], bins=200, range=[-1, 1])
-            info(68, f'Bias = {bias_c:.3f}, MSE = {mse_c:.3f}, Err = {err_c:.3f}')
-            info(68, 
+            info(7, f'Bias = {bias_c:.3f}, MSE = {mse_c:.3f}, Err = {err_c:.3f}')
+            info(7, 
                  f'Retrieving science field data: expecting {data_pr["nstars_sf"]:,.0f} objects')
             sf_data = cls.retrieve_data(id, 1, data_pr['urls_sf'],
-                                        logger=lambda message: info(68, message))
-            info(74, f'{len(sf_data):,.0f} objects found')
-            info(74, 'Converting photometric data')
+                                        logger=lambda message: info(8, message),
+                                        expected=data_pr["nstars_sf"])
+            info(9, f'{len(sf_data):,.0f} objects found')
+            info(9, 'Converting photometric data')
             phot_s = PhotometricCatalogue.from_table(
                 sf_data, data_pr['mags'], data_pr['magErrs'],
                 reddening_law=data_pr['reddeningLaw'],
@@ -496,17 +613,17 @@ class AppServer:
                     'obj1', 'obj2'] if data_pr['morphclass'] else None,
                 class_prob_names=data_pr['morphclass'],
                 log_class_probs=False, dtype=np.float64)
-            info(77, f'{len(phot_s)} objects with two or more bands')
+            info(9, f'{len(phot_s)} objects with two or more bands')
             phot_s.add_log_probs()
-            info(77, 'Computing extinctions')
+            info(9, 'Computing extinctions')
             ext_s = xnicer.predict(phot_s.get_colors())
             coord_s = AstrometricCatalogue.from_table(
                 sf_data, coords, unit='deg', frame=frame)
-            info(85, 'Map making')
+            info(10, 'Map making')
             w = astropy.wcs.WCS(naxis=2)
             w.pixel_shape = (wcs['naxis1'], wcs['naxis2'])
             w.wcs.crpix = [wcs['crpix1'], wcs['crpix2']]
-            if wcs['coosys'] == 'galactic':
+            if wcs_frame == 'galactic':
                 w.wcs.ctype = [f'GLON-{wcs["projection"]}', 
                                f'GLAT-{wcs["projection"]}']
             else:
@@ -527,12 +644,12 @@ class AppServer:
                            bandwidth=data_pr['smoothpar'])
             use_xnicest = bool(
                 {'XNICEST map', 'XNICEST inverse variance'} & set(data_pr['products']))
-            hdu = make_maps(getattr(coord_s, wcs['coosys']), ext_s, w,
+            hdu = make_maps(getattr(coord_s, wcs_frame), ext_s, w,
                             smoother, n_iters=data_pr['clipIters'], 
                             tolerance=data_pr['clipping'], use_xnicest=use_xnicest)
-            info(95, 'Saving results')
+            info(11, 'Saving results')
             hdu.writeto(f'process_{id}.fits', overwrite=True, checksum=True)
-            info(100, 'Process completed', state='end')
+            info(12, 'Process completed', state='end')
         except KeyboardInterrupt:
             logging.info('Keyboard Interrupt')
         except Exception as ex:
@@ -598,7 +715,7 @@ class AppServer:
 
     # Data handling
 
-    def execute_query(self, step: int, server: str, catalogs: Sequence[str], 
+    def execute_tap_query(self, step: int, server: str, catalogs: Sequence[str], 
                       fields: Sequence[str], constraints: Union[str, dict]):
         session = getSession()
         # Check if the query has changed
@@ -633,6 +750,33 @@ class AppServer:
         session[f'querydata_{step}'] = (server, catalogs, fields, constraints)
         return job_urls
 
+    def execute_vizier_query(self, step: int, server: str, catalogs: Sequence[str],
+                          fields: Sequence[str], center: SkyCoord, 
+                          geometry: dict, constraints: dict):
+        session = getSession()
+        # Check if the query has changed
+        querydata = (server, catalogs, fields, constraints)
+        if session.get(f'querydata_{step}', ()) == querydata:
+            return session[f'URLs_{step}']
+        job_urls = []
+        try:
+            self.abort_query(step)
+            if self._process_state(session):
+                self.abort_process()
+            my_vizier = Vizier(columns=fields, timeout=VIZIER_TIMEOUT)
+            my_vizier.ROW_LIMIT = MAX_OBJS
+            for catalog in catalogs:
+                request = my_vizier.query_region_async(center, get_query_payload=True,
+                    catalog=catalog, column_filters=constraints, **geometry)
+                job_urls.append('vizier://' + request)
+        except Exception:
+            return []
+        # Save the URLs
+        session = getSession()
+        session[f'URLs_{step}'] = job_urls
+        session[f'querydata_{step}'] = (server, catalogs, fields, constraints)
+        return job_urls
+
     def abort_query(self, step: int):
         session = getSession()
         job_urls = session.get(f'URLs_{step}')
@@ -645,7 +789,41 @@ class AppServer:
             os.unlink(cache_path)
 
     @classmethod
-    def retrieve_data(cls, id: str, step: int, urls: Sequence[str], logger=logging.info):
+    def retrieve_data(cls, id: str, step: int, urls: Sequence[str], 
+                      logger=logging.info, expected=None):
+        def fetcher(job):
+            def reader(n, data):
+                result = response.raw.read(n)
+                if data[1] == 0:
+                    if expected:
+                        reclen = np.median([len(m) for m in re.findall(
+                                    r'<TR>.*?</TR>', str(result), re.MULTILINE)])
+                        data[1] = reclen * expected
+                    else:
+                        data[1] = len(block) * 50
+                if data[0] > data[1]:
+                    data[0] = data[0] % data[1]
+                data[0] += n
+                logger(f'%{data[0] / data[1] * 100}')
+                return result
+            
+            import functools
+            from astropy.io.votable import parse as votableparse
+            try:
+                response = job._session.get(job.result_uri, stream=True)
+                response.raise_for_status()
+            except requests.RequestException as ex:
+                job._update()
+                # we propably got a 404 because query error. raise with error msg
+                job.raise_if_error()
+                raise DALServiceError.from_except(ex, job.url)
+            response.raw.read = functools.partial(
+                response.raw.read, decode_content=True)
+            file_size = int(response.headers.get('Content-Length', 0))
+            data = [0, file_size]
+            return vo.dal.TAPResults(votableparse(lambda n: reader(n, data)),
+                url=job.result_uri, session=job._session)
+
         cache_path = f'process_{id}_cache{step}.fits'
         if USE_CACHE and os.path.isfile(cache_path):
             logger('Using cached results')
@@ -653,10 +831,32 @@ class AppServer:
         results: Optional[Table] = None
         n_fails = 0
         for job_url in urls:
-            if not isinstance(job_url, str):
+            if job_url[:9] == 'vizier://':
                 logger(f'Retrieving data from VizieR')
                 try:
-                    result = Vizier._parse_result(job_url)[0]
+                    payload = job_url[9:]
+                    response = Vizier._request(
+                        method='POST', url=Vizier._server_to_url(return_type='votable'),
+                        data=payload, timeout=VIZIER_TIMEOUT, cache=False, stream=True)
+                    file_size = int(response.headers.get('Content-Length', 0))
+                    content = []
+                    cur_size = 0
+                    for block in response.iter_content(None):
+                        cur_size += len(block)
+                        if file_size == 0:
+                            if expected:
+                                reclen = np.median([len(m) for m in re.findall(
+                                    r'<TR>.*?</TR>', str(block), re.MULTILINE)])
+                                file_size = reclen * expected
+                            else:
+                                file_size = len(block) * 50
+                        if cur_size > file_size:
+                            cur_size = cur_size % file_size
+                        logger(f'%{cur_size / file_size * 100}')
+                        content.append(block)
+                    logger('Parsing the answer')
+                    response._content = b''.join(content) or b''
+                    result = Vizier._parse_result(response)[0]
                 except Exception:
                     logger('Cannot retrieve the data: giving up')
                     raise
@@ -666,7 +866,9 @@ class AppServer:
                     logger(f'Retrieving data from URL {job_url}')
                     try:
                         job.wait(['COMPLETED', 'ERROR', 'ABORTED'], timeout=TAP_TIMEOUT)
-                        result = job.fetch_result().to_table()
+                        
+                        # result = job.fetch_result().to_table()
+                        result = fetcher(job).to_table()
                         if job.phase == 'COMPLETED':
                             break
                         else:
@@ -684,6 +886,9 @@ class AppServer:
             else:
                 results = result
         if USE_CACHE and results:
+            if 'description' in results.meta:
+                # Remove this keyword: too long...
+                del results.meta['description']
             results.write(cache_path)
         return results
 
@@ -706,6 +911,10 @@ if __name__ == '__main__':
         mp.set_start_method('spawn')
         manager = mp.Manager()
         pool = mp.Pool(2)
+        # CherryPy global configuration
+        cherrypy.config.update({'server.socket_host': '127.0.0.1',
+                                'server.socket_port': 8080,
+                                })
         # CherryPy configuration
         static_conf = {
             '/': {
@@ -735,5 +944,6 @@ if __name__ == '__main__':
         }
         cherrypy.tree.mount(StaticServer(), '/', static_conf)
         cherrypy.tree.mount(AppServer(), '/app', app_conf)
+        cherrypy.tree.mount(ProxyServer(), '/proxy', {})
         cherrypy.engine.start()
         cherrypy.engine.block()

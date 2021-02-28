@@ -138,11 +138,29 @@ export class Angle {
    * Return the numeric value of an angle in units of degrees.
    * @memberof Angle
    */
+  get radians() {
+    return this.degrees * Math.PI / 180;
+  }
+
+  /**
+  * Convert a number into an angle. This is a scaled version of `value`.
+  * @param value {number} The value to store, in units of degrees.
+  * @memberof Angle
+  */
+  set radians(value) {
+    this.degrees = value * 180 / Math.PI;
+  }
+
+  /**
+   * Return the numeric value of an angle in units of degrees.
+   * @memberof Angle
+   */
   get degrees() {
     let factor = Math.pow(60, this.values.length - 1);
     if (this.type === 'hms') factor /= 15;
     return this.value / factor;
   }
+
 
   /**
    * Scale an `Angle` by a given factor
