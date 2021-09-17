@@ -26,9 +26,6 @@ const FormMessage = observer(() => {
 });
 
 export const MyForm1 = observer((props) => {
-  const [wait, setWait] = React.useState('');
-  const [waitIcon, setWaitIcon] = React.useState('');
-
   const handleNext = action((e) => {
     e.preventDefault();
     if (state1.validate()) {
@@ -45,36 +42,23 @@ export const MyForm1 = observer((props) => {
 
   return (
     <Container>
-      <>
-        <Dimmer active={Boolean(waitIcon)} page
-          onClick={(e) => {
-            if (waitIcon !== 'spinner') setWaitIcon('');
-            if (waitIcon === 'check') props.onNext(e);
-          }}>
-          <Header as='h3' icon inverted>
-            <Icon // @ts-ignore
-              name={waitIcon} loading={waitIcon === 'spinner'} />
-            {String(wait)}
-          </Header>
-        </Dimmer>
-        <Form autoComplete='off'>
-          <Header as='h2'>Area selection</Header>
-          All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
-          , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left
-          using the selection button (the square).
-          <Divider hidden />
-          <CooForm cooform={state1} />
-          <p></p>
-          <Button style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
-            onClick={handleBack} />
-          <ClearButton />
-          <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
-            onClick={handleNext} />
-          <Button icon='help' toggle floated='right' />
-          <Button icon='download' floated='right' onClick={props.downloader}/>
-        </Form>
-        <FormMessage />
-      </>
+      <Form autoComplete='off'>
+        <Header as='h2'>Area selection</Header>
+        All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
+        , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left
+        using the selection button (the square).
+        <Divider hidden />
+        <CooForm cooform={state1} />
+        <p></p>
+        <Button style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
+          onClick={handleBack} />
+        <ClearButton />
+        <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
+          onClick={handleNext} />
+        <Button icon='help' toggle floated='right' />
+        <Button icon='download' floated='right' onClick={props.downloader}/>
+      </Form>
+      <FormMessage />
     </Container>);
 });
 

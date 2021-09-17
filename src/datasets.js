@@ -31,9 +31,20 @@ export const serversDict = {
   },
   IRSA: {
     description: 'IRSA',
-    server: 'https://irsa.ipac.caltech.edu/TAP',
+    server: 'https://cors-anywhere.herokuapp.com/https://irsa.ipac.caltech.edu/TAP',
     image: logoIRSA
+  },
+  ESO: {
+    description: 'ESO',
+    server: 'https://cors-anywhere.herokuapp.com/https://archive.eso.org/tap_cat',
+    image: null
+  },
+  ESA: {
+    description: 'ESA',
+    server: 'http://sky.esa.int/esasky-tap/tap',
+    image: null
   }
+
 };
 
 export const datasetsDict = {
@@ -43,22 +54,22 @@ export const datasetsDict = {
     servers: ['VizieR', 'VizieRTAP', 'IRSA'],
     catalogs: {
       VizieR: 'II/246/out',
-      VizieRTAP: '"II/246/out"',
+      VizieRTAP: 'II/246/out',
       IRSA: 'fp_psc'
     },
     coords: {
-      VizieR: {
-        E: ['RAJ2000', 'DEJ2000'],
-        G: ['GLON', 'GLAT']
-      },
-      VizieRTAP: {
-        E: ['RAJ2000', 'DEJ2000'],
-        G: ['GLON', 'GLAT']
-      },
-      IRSA: {
-        E: ['ra', 'dec'],
-        G: ['glon', 'glat']
-      }
+      VizieR: [
+        ['E', 'RAJ2000', 'DEJ2000'],
+        ['G', 'GLON', 'GLAT']
+      ],
+      VizieRTAP: [
+        ['E', 'RAJ2000', 'DEJ2000'],
+        ['G', 'GLON', 'GLAT']
+      ],
+      IRSA: [
+        ['E', 'ra', 'dec'],
+        ['G', 'glon', 'glat']
+      ]
     },
     bands: {
       VizieR: [
@@ -91,13 +102,13 @@ export const datasetsDict = {
     servers: ['VizieR', 'VizieRTAP', 'IRSA'],
     catalogs: {
       'VizieR': 'II/328/allwise',
-      'VizieRTAP': '"II/328/allwise"',
+      'VizieRTAP': 'II/328/allwise',
       'IRSA': 'allwise_p3as_psd'
     },
     coords: {
-      'VizieR': { E: ['RAJ2000', 'DEJ2000'] },
-      'VizieRTAP': { E: ['RAJ2000', 'DEJ2000'] },
-      'IRSA': { E: ['ra', 'dec'] },
+      'VizieR': [['E', 'RAJ2000', 'DEJ2000']],
+      'VizieRTAP': [['E', 'RAJ2000', 'DEJ2000']],
+      'IRSA': [['E', 'ra', 'dec']]
     },
     bands: {
       'VizieR': [
@@ -138,10 +149,8 @@ export const datasetsDict = {
     servers: ['VizieR'],
     mocs: ['http://alasky.u-strasbg.fr/footprints/tables/vizier/J_A+A_587_A153_science/MOC',
       'http://alasky.u-strasbg.fr/footprints/tables/vizier/J_A+A_587_A153_control/MOC'],
-    catalogs: ['"J/A+A/587/A153/science"', '"J/A+A/587/A153/control"'],
-    coords: {
-      E: ['RAJ2000', 'DEJ2000']
-    },
+    catalogs: ['J/A+A/587/A153/science', 'J/A+A/587/A153/control'],
+    coords: [['E', 'RAJ2000', 'DEJ2000']],
     bands: [
       ['J', 'Jmag', 'e_Jmag', 2.55],
       ['H', 'Hmag', 'e_Hmag', 1.55],

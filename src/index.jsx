@@ -26,7 +26,7 @@ const states = [state0, state1, state2, state3, state4];
 
 export function MyApp(props) 
 {
-  const [step, setStep] = React.useState(0); // FIXME
+  const [step, setStep] = React.useState(0);
   const [completed, setCompleted] = React.useState(-1);
   const cooforms = [null, state1, state2, null];
   const abortProcess = () => {
@@ -113,7 +113,10 @@ export function MyApp(props)
     reader.onload = action((e) => {
       // @ts-ignore
       const data = JSON.parse(e.target.result);
-      if (data.length > 0) state0.push(data[0]);
+      if (data.length > 0) {
+        state0.push(data[0]);
+        saveStep0();
+      }
       if (data.length > 1) {
         state1.push(data[1]);
         saveStep1();
@@ -122,7 +125,10 @@ export function MyApp(props)
         state2.push(data[2]);
         saveStep2();
       }
-      if (data.length > 3) state3.push(data[3]);
+      if (data.length > 3) {
+        state3.push(data[3]);
+        saveStep3();
+      }
     });
     reader.readAsText(file);
   };

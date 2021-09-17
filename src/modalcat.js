@@ -70,11 +70,13 @@ export const ModalTapSearch = observer((props) => {
   const isVizier = serverURL === 'vizier';
 
   const doSearch = () => {
-    dispatch({ type: 'startQuery' });
-    let promise = isVizier ? findVizierCatalog(searchValue, searchType) : findTapCatalog(serverURL, searchValue, searchType);
-    promise
-      .then(result => dispatch({ type: 'stopQuery', catalogs: result }))
-      .catch(error => dispatch({ type: 'errorQuery', error: error.toString() }));
+    if (serverURL) {
+      dispatch({ type: 'startQuery' });
+      let promise = isVizier ? findVizierCatalog(searchValue, searchType) : findTapCatalog(serverURL, searchValue, searchType);
+      promise
+        .then(result => dispatch({ type: 'stopQuery', catalogs: result }))
+        .catch(error => dispatch({ type: 'errorQuery', error: error.toString() }));
+    } else dispatch({ type: 'errorQuery', error: 'Please specify a server' });
   };
 
   const doSubSearch = (catid) => {
@@ -231,8 +233,8 @@ export const ModalTapSearch = observer((props) => {
             <p>
               <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br />
             </p>}
-          {_.isString(state.query) ? <Message error header='Error' content={state.query} /> : <></>}
-          {state.query === true ? <Message info header='Quering server'
+          {state.error ? <Message error header='Error' content={state.error} /> : <></>}
+          {state.query === true ? <Message info header='Querying server'
             content='The server is being queried for tables containg your search terms.' /> : <></>}
         </Modal.Content>
       </Ref>
