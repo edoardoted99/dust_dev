@@ -12,7 +12,7 @@ import { InputUnit } from './inputunit.js'
 import { FormState } from './formstate.js'
 import { Slider } from './slider.js'
 import { Angle } from './angle.js';
-import { sphereCircle } from './spherical.js'
+import { sphereBox, sphereBoxCorners, sphereCircle } from './spherical.js'
 import { galactic2equatorial, equatorial2galactic } from './coordinates.js'
 // import './css/slider.css'
 const WCS = require('./wcs.js')
@@ -42,6 +42,10 @@ export class Form3State extends FormState {
   @observable smoothpar = '2';
   @observable clipping = '3.0';
   @observable clipIters = 3;
+  @observable lonMin = 0;
+  @observable lonMax = 360;
+  @observable latMin = -90;
+  @observable latMax = 90;
 
 validators = {
     products: x => (x.length < 1) && 'Select at least one product',
@@ -177,36 +181,18 @@ validators = {
 
   @action.bound guessWCS() {
     let lonMin, lonMax, latMin, latMax;
-    let crval1, crval2, scale, naxis1, naxis2, aspect;
-    if (this.state1.shape === 'R') {
-      lonMin = this.state1.lonMinAngle.degrees;
-      lonMax = this.state1.lonMaxAngle.degrees;
-      latMin = this.state1.latMinAngle.degrees;
-      latMax = this.state1.latMaxAngle.degrees;
-      if (lonMin > lonMax) lonMin -= 360;
-      crval1 = (lonMin + lonMax) * 0.5;
-      if (crval1 < 0) crval1 += 360;
-      crval2 = (latMin + latMax) * 0.5;
-      aspect = (lonMax - lonMin) * Math.cos(crval2 * Math.PI / 180.0) / (latMax - latMin);
-    } else {
-      const s1 = Math.sin(this.state1.radiusAngle.radians);
-      const s2 = Math.sin(Math.PI / 2 - this.state1.latCtrAngle.radians);
-      const delta = (s1 < s2) ? Math.asin(s1 / s2) * 180 / Math.PI : 180;
-      lonMin = this.state1.lonCtrAngle.degrees - delta;
-      lonMax = this.state1.lonCtrAngle.degrees + delta;
-      latMin = Math.max(this.state1.latCtrAngle.degrees - this.state1.radiusAngle.degrees, -90);
-      latMax = Math.min(this.state1.latCtrAngle.degrees + this.state1.radiusAngle.degrees, 90);
-      crval1 = this.state1.lonCtrAngle.degrees;
-      crval2 = this.state1.latCtrAngle.degrees;
-      aspect = 1.0;
-    }
+    let crval1 = this.state1.lonCtrAngle.degrees, crval2 = this.state1.latCtrAngle.degrees;
+    let lonRad = (this.state1.shape === 'C') ? this.state1.radiusAngle.degrees : this.state1.lonWdtAngle.degrees / 2;
+    let latRad = (this.state1.shape === 'C') ? this.state1.radiusAngle.degrees : this.state1.latWdtAngle.degrees / 2;
+    let scale, naxis1, naxis2, aspect;
+    if (crval1 < 0) crval1 += 360;
+    aspect = lonRad / latRad;
     if (this.state1.cooSys === 'G' && this.coosys !== 'galactic')
       // Convert from galactic to equatorial
       [crval1, crval2] = galactic2equatorial(crval1, crval2);
     else if (this.state1.cooSys !== 'G' && this.coosys === 'galactic')
       // Convert from equatorial to galactic
-      [crval1, crval2] = equatorial2galactic(crval1, crval2);
-      
+      [crval1, crval2] = equatorial2galactic(crval1, crval2);      
     // scale = _.minBy(goodScales, x => Math.abs(this.starsPerPixel - this.state1.density * x * x / 3600));
     scale = this.scaleArcsec / 3600;
     naxis1 = Math.ceil((Math.floor(Math.sqrt(this.state1.area * aspect) / scale * 1.1) + 20) / 10) * 10;
@@ -233,30 +219,34 @@ validators = {
 
   @action.bound improveWCS(header) {
     const wcs = new WCS();
-    let xy;
-    if (this.state1.shape === 'R') {
-      let lonMin = this.state1.lonMinAngle.degrees, lonMax = this.state1.lonMaxAngle.degrees,
-        latMin = this.state1.latMinAngle.degrees, latMax = this.state1.latMaxAngle.degrees;
-      if (lonMin > lonMax) lonMin -= 360;
-      const aspect = Math.sqrt((lonMax - lonMin) * Math.cos((latMax + latMin) * Math.PI / 360.0) / (latMax - latMin));
-      const nx = _.max([Math.round(4 * aspect), 1]) * 2, ny = _.max([Math.round(4 / aspect), 1]) * 2;
-      const xs = _.times(nx + 1, x => lonMin + x * (lonMax - lonMin) / nx);
-      const ys = _.times(ny + 1, y => latMin + y * (latMax - latMin) / ny);
-      xy = [_.flatten(_.times(ny + 1, _.constant(xs))), _.flatten(_.map(ys, y => _.times(nx + 1, _.constant(y))))];
-    } else {
-      const nr = 5, nt = 32;
-      const lonCtr = this.state1.lonCtrAngle.degrees, latCtr = this.state1.latCtrAngle.degrees,
-        radius = this.state1.radiusAngle.degrees;
-      xy = [[], []];
+    let xy = [[], []];
+    const nr = 5, nt = 32;
+    const lonCtr = this.state1.lonCtrAngle.degrees, latCtr = this.state1.latCtrAngle.degrees;
+    if (this.state1.shape === 'B') {
+      const width = this.state1.lonWdtAngle.degrees, height = this.state1.latWdtAngle.degrees;
       for (let r = 1; r <= nr; r++) {
-        let points = [], rt = Math.ceil(nt * r / nr);
-        sphereCircle(points, lonCtr, latCtr, radius * r / nr, -rt);
-        for (let t = 0; t < rt; t++) {
+        let points = [], npts = Math.ceil(nt / 4 * r / nr);
+        sphereBox(points, sphereBoxCorners(lonCtr, latCtr, width * r / nr, height * r / nr), -npts);
+        npts = points.length;
+        for (let n = 0; n < npts; n++) {
+          xy[0].push(points[n][0]);
+          xy[1].push(points[n][1]);
+        }
+      }
+    } else {
+      const radius = this.state1.radiusAngle.degrees;
+      for (let r = 1; r <= nr; r++) {
+        let points = [], npts = Math.ceil(nt * r / nr);
+        sphereCircle(points, lonCtr, latCtr, radius * r / nr, -npts);
+        npts = points.length;
+        for (let t = 0; t < npts; t++) {
           xy[0].push(points[t][0]);
           xy[1].push(points[t][1]);
         }
       }
     }
+    const lonMin = _.min(xy[0]), latMin = _.min(xy[1]), lonMax = _.max(xy[0]), latMax = _.max(xy[1]);
+
     wcs.init(header);
     if (this.state1.cooSys === 'G' && this.coosys !== 'galactic') {
       for (let n = 0; n < xy[0].length; n++)
@@ -287,6 +277,10 @@ validators = {
     this.crval1 = (new Angle(header.CRVAL1, 'longitude')).angle;
     this.crval2 = (new Angle(header.CRVAL2, 'latitude')).angle;
     this.crota2 = String(header.CROTA2);
+    this.lonMin = lonMin;
+    this.lonMax = lonMax;
+    this.latMin = latMin;
+    this.latMax = latMax;
     return header;
   }
 }
@@ -493,31 +487,9 @@ export const FormSVG = observer((props) => {
     if (closed) svg.push('Z');
     return svg.join(' ');
   }
-  const line = (wcs, lonMin, lonMax, latMin, latMax, npts = 33) => {
-    const lonStep = (lonMax - lonMin) / (npts - 1), latStep = (latMax - latMin) / (npts - 1);
+  const wcsPath = (wcs, points, closed = false) => {
+    const npts = points.length;
     const xs = Array(npts), ys = Array(npts);
-
-    for (let n = 0; n < npts; n++) {
-      xs[n] = lonMin + n * lonStep;
-      ys[n] = latMin + n * latStep
-    }
-    if (state3.state1.cooSys === 'G' && state3.coosys !== 'galactic') {
-      for (let n = 0; n < npts; n++)
-        [xs[n], ys[n]] = galactic2equatorial(xs[n], ys[n]);
-    } else if (state3.state1.cooSys !== 'G' && state3.coosys === 'galactic') {
-      // Convert from equatorial to galactic
-      for (let n = 0; n < npts; n++)
-        [xs[n], ys[n]] = equatorial2galactic(xs[n], ys[n]);
-    }
-    for (let n = 0; n < npts; n++) {
-      [xs[n], ys[n]] = wcs.sky2pix(xs[n], ys[n]);
-    }
-    return svgPath(xs, ys);
-  }
-  const circle = (wcs, lonCtr, latCtr, radius, npts = 33) => {
-    let points = [];
-    const xs = Array(npts), ys = Array(npts);
-    sphereCircle(points, lonCtr, latCtr, radius, -npts);
     if (state3.state1.cooSys === 'G' && state3.coosys !== 'galactic') {
       for (let n = 0; n < npts; n++)
         [points[n][0], points[n][1]] = galactic2equatorial(points[n][0], points[n][1]);
@@ -529,7 +501,30 @@ export const FormSVG = observer((props) => {
     for (let n = 0; n < npts; n++) {
       [xs[n], ys[n]] = wcs.sky2pix(points[n][0], points[n][1]);
     }
-    return svgPath(xs, ys, true);
+    return svgPath(xs, ys, closed);
+  }
+  const line = (wcs, lonMin, lonMax, latMin, latMax, npts = 33) => {
+    const lonStep = (lonMax - lonMin) / (npts - 1), latStep = (latMax - latMin) / (npts - 1);
+    const points = Array(npts);
+    for (let n = 0; n < npts; n++)
+      points[n] = [lonMin + n * lonStep, latMin + n * latStep];
+    return wcsPath(wcs, points, false);
+  }
+  const box = (wcs, lonCtr, latCtr, width, height, npts = 15) => {
+    let points = [];
+    sphereBox(points, sphereBoxCorners(lonCtr, latCtr, width, height), -npts);
+    const l = points.length / 4;
+    const r = 'M ' + wcsPath(wcs, points.slice(0, l), false) + 
+      ' L ' + wcsPath(wcs, points.slice(l, 2*l), false) +
+      ' L ' + wcsPath(wcs, points.slice(2*l, 3*l), false) +
+      ' L ' + wcsPath(wcs, points.slice(3 * l, 4 * l), false) + ' Z';
+    return r;
+  }
+  const circle = (wcs, lonCtr, latCtr, radius, npts = 33) => {
+    let points = [];
+    const xs = Array(npts), ys = Array(npts);
+    sphereCircle(points, lonCtr, latCtr, radius, -npts);
+    return wcsPath(wcs, points, true);
   }
 
   const wcs = new WCS();
@@ -537,16 +532,17 @@ export const FormSVG = observer((props) => {
   const n1 = header.NAXIS1, n2 = header.NAXIS2, b = _.max([n1 / 10, n2 / 10, 20]);
   wcs.init(header);
 
-  let lonMin, lonMax, latMin, latMax;
+  let lonMin = state3.lonMin, lonMax = state3.lonMax, latMin = state3.latMin, latMax = state3.latMax;
   let lonCtr = state3.state1.lonCtrAngle.degrees, latCtr = state3.state1.latCtrAngle.degrees,
-    radius = state3.state1.radiusAngle.degrees, c = Math.cos(state3.state1.latCtrAngle.radians);
-  if (state3.state1.shape === 'R') {
+    radius = state3.state1.radiusAngle.degrees, c = Math.cos(state3.state1.latCtrAngle.radians),
+    lonWidth = state3.state1.lonWdtAngle.degrees, latWidth = state3.state1.latWdtAngle.degrees;
+  if (state3.state1.shape === 'FIXME') {
     lonMin = state3.state1.lonMinAngle.degrees;
     lonMax = state3.state1.lonMaxAngle.degrees;
     latMin = state3.state1.latMinAngle.degrees;
     latMax = state3.state1.latMaxAngle.degrees;
     if (lonMin > lonMax) lonMin -= 360;
-  } else {
+  } else if (state3.state1.shape === 'FIXME') {
     const s1 = Math.sin(state3.state1.radiusAngle.radians);
     const s2 = Math.sin(Math.PI / 2 - state3.state1.latCtrAngle.radians);
     const delta = (s1 < s2) ? Math.asin(s1 / s2) * 180 / Math.PI : 180;
@@ -559,6 +555,7 @@ export const FormSVG = observer((props) => {
   const nx = _.max([Math.round(4 * aspect), 1]) * 2, ny = _.max([Math.round(4 / aspect), 1]) * 2;
   const lonStep = (lonMax - lonMin) / nx, latStep = (latMax - latMin) / ny;
   const cone = state3.state1.shape === 'C';
+  const border = cone ? circle(wcs, lonCtr, latCtr, radius) : box(wcs, lonCtr, latCtr, lonWidth, latWidth);
   return (
     <svg height='400' width='400' viewBox={`${-b} ${-b} ${n1 + 2 * b} ${n2 + 2 * b}`}
       preserveAspectRatio='xMinYMin meet'>
@@ -566,15 +563,9 @@ export const FormSVG = observer((props) => {
         <clipPath id='paper'>
           <path d={`M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`} />
         </clipPath>
-        {cone ?
-          <clipPath id='fov'>
-            <path d={circle(wcs, lonCtr, latCtr, radius)} />
-          </clipPath>
-          :
-          <clipPath id='fov'>
-            <path d={`M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`} />
-          </clipPath>
-        }
+        <clipPath id='fov'>
+          <path d={border} />
+        </clipPath>
       </defs>
       <g clipPath='url(#paper)' transform={`scale(1, -1) translate(0, -${n2})`}>
         <g clipPath='url(#fov)'>
@@ -585,15 +576,7 @@ export const FormSVG = observer((props) => {
             <path d={'M ' + line(wcs, lonMin, lonMax, latMin + latStep * n, latMin + latStep * n)}
               fill='none' stroke='grey' strokeWidth='1' vectorEffect='non-scaling-stroke' key={`y${n}`} />)}
         </g>
-        {cone ?
-          <path d={circle(wcs, lonCtr, latCtr, radius)}
-            fill='none' stroke='black' strokeWidth='2' vectorEffect='non-scaling-stroke' key='C' />
-          :
-          <path d={
-            'M ' + line(wcs, lonMax, lonMin, latMin, latMin) + ' L ' + line(wcs, lonMin, lonMin, latMin, latMax) +
-            ' L ' + line(wcs, lonMin, lonMax, latMax, latMax) + ' L ' + line(wcs, lonMax, lonMax, latMax, latMin) + ' Z'}
-            fill='none' stroke='black' strokeWidth='2' vectorEffect='non-scaling-stroke' key='C' />
-        }
+        <path d={border} fill='none' stroke='black' strokeWidth='2' vectorEffect='non-scaling-stroke' key='C' />
         <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`}
           fill='red' stroke='none' fillOpacity='0.5' vectorEffect='non-scaling-stroke' key='F1' />
         <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`}
@@ -624,7 +607,6 @@ export function MyForm3(props) {
         }, { timeout: 30000 })
         .then(action(response => {
           setWait('');
-          console.log(response.data);
           state3.messageProps = response.data.message;
           if (state3.messageType === 'success') props.onNext(e)
         }))

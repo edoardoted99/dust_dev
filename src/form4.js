@@ -108,11 +108,11 @@ const DownloadProducts = observer((props) => {
   };
 
   const products = {
-    'XNICER map': { filename: 'ext_map.fits', color: 'blue' },
-    'XNICER inverse variance': { filename: 'ext_ivar.fits', color: 'red' },
-    'XNICEST map': { filename: 'xext_map.fits', color: 'violet' },
-    'XNICEST inverse variance': { filename: 'xext_ivar.fits', color: 'pink' },
-    'Star density': { filename: 'density.fits', color: 'grey' }
+    'XNICER map': { text: 'XNICER map', filename: 'ext_map.fits', color: 'blue' },
+    'XNICER inverse variance': { text: 'XNICER ivar', filename: 'ext_ivar.fits', color: 'red' },
+    'XNICEST map': { text: 'NICER map', filename: 'xext_map.fits', color: 'violet' },
+    'XNICEST inverse variance': { text: 'NICER ivar', filename: 'xext_ivar.fits', color: 'pink' },
+    'Star density': { text: 'Density', filename: 'density.fits', color: 'grey' }
   };
   return (
     <>
@@ -121,7 +121,7 @@ const DownloadProducts = observer((props) => {
           <Button animated='vertical' color={products[name].color}
             href={'/app/download?filename=' + products[name].filename}>
             <Button.Content hidden content='Download' />
-            <Button.Content visible content={name} />
+            <Button.Content visible content={products[name].text} />
           </Button>
           <Button color={products[name].color} basic icon={{ name: 'globe' }}
             onClick={e => loadFits(e, products[name].filename)} />

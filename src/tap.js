@@ -16,6 +16,22 @@ const TAP_VIZIER = 'http://TAPVizieR.u-strasbg.fr/TAPVizieR/tap';
 const VIZIER_SERVER = 'http://vizier.u-strasbg.fr/viz-bin';
 
 /**
+ * @typedef {import('./form0.js').coordSpec} coordSpec
+ */
+
+/**
+ * @typedef {import('./form0.js').bandSpec} bandSpec
+ */
+
+/**
+ * @typedef {import('./form0.js').columnSpec} columnSpec
+ */
+
+/**
+ * @typedef {import('./form0.js').catalogProperties} catalogProperties
+ */
+
+/**
  * Table 3 from Rieke & Lebovsky (1985), ApJ 288, 618: ratio A_lambda / A_V.
  * @type {{ [band: string]: number }}
  */
@@ -38,10 +54,12 @@ const RIEKE_LEBOVSKY = {
  * @param {('row'|'column')} [order='row'] The required order of the output
  * @returns {{ 'columns': any[], 'rows': (any[]|null) }} The parsed VOTable
  */
-export function parseVOTable(xmldata, order = 'row') {
+export function parseVOTable(xmldata, order = 'row', nodata = false ) {
   const constructors = {
-    'byte': Int8Array, 'short': Int16Array, 'int': Int32Array, 'long': BigInt64Array,
-    'unsignedByte': Uint8Array, 'unsignedShort': Uint16Array, 'unsignedInt': Uint16Array, 'unsighedLong': BigUint64Array,
+    'byte': Int8Array, 'short': Int16Array, 'int': Int32Array,
+    'long': (typeof BigInt64Array === 'undefined') ? Array : BigInt64Array,
+    'unsignedByte': Uint8Array, 'unsignedShort': Uint16Array, 'unsignedInt': Uint16Array,
+    'unsighedLong': (typeof BigUint64Array === 'undefined') ? Array : BigUint64Array,
     'float': Float32Array, 'double': Float64Array
   }
   // @ts-ignore
@@ -53,9 +71,10 @@ export function parseVOTable(xmldata, order = 'row') {
   let resource = votable.getResources()[0];
   let table = resource.getResourcesOrTables()[0];
   let fields = table.getFields();
-  let data = table.getData();
+  let data = nodata ? null : table.getData();
   let trs = [];
-  if (data) {
+  // @ts-ignore
+  if (data != null && data.getDataImplementationName() === JsVotable.Constants.TAG.TABLEDATA) {
     let tabledata = data.getData();
     trs = tabledata.getTrs();
   }
@@ -70,7 +89,7 @@ export function parseVOTable(xmldata, order = 'row') {
       const attributes = fields[c].getAttributes(), datatype = attributes.datatype;
       columns.push({ ...attributes, description: fields[c].getDescription().value });
       if (datatype in constructors) {
-        if (datatype !== 'flooat' && datatype !== 'double') parsers.push(parseInt);
+        if (datatype !== 'float' && datatype !== 'double') parsers.push(parseInt);
         else parsers.push(parseFloat);
       } else parsers.push(x => x);
     }
@@ -288,19 +307,20 @@ export function parseVizierType(type, size = 0) {
  * @param {string} catalog The name of the catalog
  * @param {number?} catid The catalog identifier (only used if server == 'vizier')
  * @param {number?} tabid The table identifier (only used if server == 'vizier')
- * @returns {Promise<{ coords: { E: string[], G: string[] }, bandlist: any[][], columns: any[], catid: number, tabid: number }>}
+ * @returns {Promise<catalogProperties>}
  * The return value has three properties:
  * - `coords`: an object that list, for each coordinate system (Equatorial or Galactic) the names
  *   of the columns that give the coordinates (in order: RA/longitude, DE/latitude)
  * - `bandlist`: a list of tuples of the form [bandname, magnitude_column_name, error_column_name, extinction_law],
  *   where the extinction_law is taken from `RIEKE_LEBOVSKY`
  * - `columns`: the full list of columns, as returned by the `tap_schema.columns` query. Each object contains at 
- *   the fields `column_name`, `description`, `datatype`, `unit`, `ucd`, `indexed`. If the server is 'vizier',
+ *   the fields `name`, `description`, `datatype`, `unit`, `ucd`, `indexed`. If the server is 'vizier',
  *   than the columns will also include the `notid` (note ID) and `default` flag.
  */
 export async function queryTable(server, catalog, catid = undefined, tabid = undefined) {
   let columns = [];
-  if (catalog.match(/^".*"$/)) catalog = catalog.substr(1, catalog.length - 2);
+  // Remove the quotes if necessary
+  if (server !== 'local' && catalog.match(/^".*"$/)) catalog = catalog.substr(1, catalog.length - 2);
   if (server === 'vizier') {
     server = TAP_VIZIER;
     // Vizier queries are somewhat complex. We first need to identify the catalog and table ids...
@@ -326,7 +346,7 @@ export async function queryTable(server, catalog, catid = undefined, tabid = und
     for (let r = 0; r < vrows.length; r++) {
       const vrow = vrows[r]
       columns.push({
-        column_name: vrow.name,
+        name: vrow.name,
         description: vrow.explain,
         datatype: parseVizierType(vrow.type, vrow.length),
         unit: vrow.unit,
@@ -336,8 +356,10 @@ export async function queryTable(server, catalog, catid = undefined, tabid = und
         notid: vrow.notid
       })
     }
+  } else if (server === 'local') {
+    columns = parseVOTable(catalog, 'row', true).columns;
   } else {
-    let fields = ['column_name', 'description', 'datatype', 'columns.unit AS unit', 'ucd', 'indexed'];
+    let fields = ['column_name AS name', 'description', 'datatype', 'columns.unit AS unit', 'ucd', 'indexed'];
     let query = `SELECT TOP 1000 ${fields.join(',')} FROM tap_schema.columns WHERE table_name='${catalog}'`;
     let response = await axios.get(server + '/sync',
       {
@@ -351,13 +373,16 @@ export async function queryTable(server, catalog, catid = undefined, tabid = und
     columns = parseVOTable(response.data).rows;
   }
   // Now parse the UCDs: this code is common between VizieR and TAP
-  let coords = { E: [], G: [] }, bandlist = [], partialBands = {}, knownBands = {};
+  let coordDict = { E: [], G: [] };
+  /** @type { bandSpec[] } */
+  let bandlist = [];
+  let partialBands = {}, knownBands = {};
   for (let column of columns) {
-    const ucd = column.ucd.split(';'), name = column.column_name, main = ucd[ucd.length - 1] === 'meta.main';
-    if (ucd[0] === 'pos.eq.ra') coords.E[0] = name;
-    else if (ucd[0] === 'pos.eq.dec') coords.E[1] = name;
-    if (ucd[0] === 'pos.galactic.lon' || ucd[0] === 'pos.gal.lon') coords.G[0] = name;
-    else if (ucd[0] === 'pos.galactic.lat' || ucd[0] === 'pos.gal.lat') coords.G[1] = name;
+    const ucd = column.ucd.split(';'), name = column.name, main = ucd[ucd.length - 1] === 'meta.main';
+    if (ucd[0] === 'pos.eq.ra') coordDict.E[0] = name;
+    else if (ucd[0] === 'pos.eq.dec') coordDict.E[1] = name;
+    if (ucd[0] === 'pos.galactic.lon' || ucd[0] === 'pos.gal.lon') coordDict.G[0] = name;
+    else if (ucd[0] === 'pos.galactic.lat' || ucd[0] === 'pos.gal.lat') coordDict.G[1] = name;
     // First scan: check if we have complete 'phot.mag;xxx' + 'stat.error;phot.mag;xxx' UCDs.
     if (ucd[0] === 'phot.mag' && ucd.length >= 2) {
       let band = ucd[1].split('.'), bandname = band[band.length - 1];
@@ -382,7 +407,7 @@ export async function queryTable(server, catalog, catid = undefined, tabid = und
   // Second scan: if we have leftovers in partialBands, use the first 'stat.error;phot.mag' in the catalog.
   let last_band = '';
   for (let column of columns) {
-    let ucd = column.ucd.split(';'), name = column.column_name, main = ucd[ucd.length - 1] === 'meta.main';
+    let ucd = column.ucd.split(';'), name = column.name, main = ucd[ucd.length - 1] === 'meta.main';
     if (ucd[0] === 'phot.mag' && ucd.length >= 2) {
       let band = ucd[1].split('.'), bandname = band[band.length - 1];
       if (bandname in partialBands && partialBands[bandname].mag && !knownBands[bandname]) last_band = bandname;
@@ -396,8 +421,11 @@ export async function queryTable(server, catalog, catid = undefined, tabid = und
   // Finally, sort the colors by wavelengths (blue to red): we use the reddening law for this!
   bandlist.sort((x, y) => y[3] - x[3]);
   // Cleans the missing coordinates
-  for (let coord in coords)
-    if (coords[coord].length === 0) delete coords[coord];
+  /** @type { coordSpec[] } */
+  let coords = []
+  for (let coord in coordDict)
+    // @ts-ignore
+    if (coordDict[coord].length > 0) coords.push([coord, coordDict[coord][0], coordDict[coord][1]]);
   return { coords, bandlist, columns, catid, tabid };
 }
 
@@ -463,7 +491,7 @@ export async function testServerQuery(server, table, fields, conditions) {
       const condition = conditions[c];
       constraints.push(condition[0] + condition[1] + condition[2]);
     }
-    let query = `SELECT TOP 1 ${fields.join(',')} FROM ${table}`;
+    let query = `SELECT TOP 1 ${fields.join(',')} FROM "${table}"`;
     if (constraints.length > 0) query += ` WHERE ${ constraints.join(' AND ') }`;
     response = await axios.get(server + '/sync',
       {

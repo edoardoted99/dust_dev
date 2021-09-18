@@ -150,7 +150,7 @@ export class FormState {
    * @memberof FormState
    */
   @action.bound pull() {
-    return _.cloneDeep(_.pickBy(this, (v, k) => (k !== 'undo') && isObservableProp(this, k) && (!isComputedProp(this, k))));
+    return _.cloneDeep(_.pickBy(this, (v, k) => (k !== 'undo') && (k[0] !== '_') && isObservableProp(this, k) && (!isComputedProp(this, k))));
   }
 
   /**

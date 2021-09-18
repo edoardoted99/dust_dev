@@ -32,7 +32,7 @@ const VOTableDescription = (props) => {
         {description + ' '}
         <Modal open={!!note} onOpen={handleOpen} onClose={() => setNote(false)}
           dimmer='inverted' trigger={<a>{trigger}</a>}>
-          <Modal.Header>Note on {props.column_name}</Modal.Header>
+          <Modal.Header>Note on {props.name}</Modal.Header>
           <Modal.Content scrolling>
             {note === true ? (
               <Placeholder style={{ minWidth: '400px' }}>
@@ -63,7 +63,7 @@ const VOTableDisplayer = (props) => {
     if (showAllColsSwitch && (!allCols) && (!field.default)) return true;
     if (props.hiddenFields) {
       if (_.isArray(props.hiddenFields))
-        return (props.hiddenFields.indexOf(field.column_name) >= 0);
+        return (props.hiddenFields.indexOf(field.name) >= 0);
       else return props.hiddenFields(field);
     }
     return false;
@@ -72,7 +72,7 @@ const VOTableDisplayer = (props) => {
   const isDisabled = field => {
     if (props.disabledFields) {
       if (_.isArray(props.disabledFields))
-        return props.disabledFields.indexOf(field.column_name) >= 0;
+        return props.disabledFields.indexOf(field.name) >= 0;
       else return props.disabledFields(field);
     }
     return false;
@@ -82,7 +82,7 @@ const VOTableDisplayer = (props) => {
       {showAllColsSwitch ?
         <Radio slider label='Show all columns' checked={allCols} onChange={() => setAllCols(!allCols)} />
         : <></>}
-      <Table selectable>
+      <Table unstackable selectable>
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell>Name</Table.HeaderCell>
@@ -95,17 +95,17 @@ const VOTableDisplayer = (props) => {
         </Table.Header>
         <Table.Body>
           {_.map(_.filter(props.votable, field => !isHidden(field)), field =>
-            <Table.Row key={field.column_name} active={field.column_name === props.value}
-              disabled={field.column_name !== props.value && isDisabled(field)}
-              onClick={(e) => props.onClick(e, field.column_name)} >
-              <Table.Cell>{field.column_name}</Table.Cell>
+            <Table.Row key={field.name} active={field.name === props.value}
+              disabled={field.name !== props.value && isDisabled(field)}
+              onClick={(e) => props.onClick(e, field.name)} >
+              <Table.Cell>{field.name}</Table.Cell>
               <Table.Cell>
-                <VOTableDescription catid={props.catid} disabled={field.column_name !== props.value && isDisabled(field)}
-                {...field} />
+                <VOTableDescription catid={props.catid} disabled={field.name !== props.value && isDisabled(field)}
+                description={field.description || ''} notid={field.notid} />
               </Table.Cell>
-              <Table.Cell>{field.datatype}</Table.Cell>
-              <Table.Cell>{field.unit}</Table.Cell>
-              <Table.Cell>{field.ucd}</Table.Cell>
+              <Table.Cell>{field.datatype || '–'}</Table.Cell>
+              <Table.Cell>{field.unit || ''}</Table.Cell>
+              <Table.Cell>{field.ucd || ''}</Table.Cell>
               <Table.Cell collapsing textAlign='center'>{field.indexed == 1 ? <Icon name='check' /> : <></>}</Table.Cell>
             </Table.Row>)}
         </Table.Body>
@@ -118,7 +118,7 @@ export const inputVOValidator = (value, props) => {
   const { votable, disabledFields } = props;
   let { missingMessage, duplicatedMessage } = props;
   let exists, duplicate, error;
-  exists = _.findIndex(votable, ['column_name', value]) >= 0;
+  exists = _.findIndex(votable, ['name', value]) >= 0;
   duplicate = _.filter(disabledFields || [], field => field === value).length > 1;
   if (missingMessage === undefined || missingMessage === 'error')
     missingMessage = 'Enter a valid field';
