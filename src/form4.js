@@ -78,20 +78,28 @@ export const FitsPanel = (props) => {
   const [sync, setSync] = React.useState(false);
   const colormaps = ['grey', 'heat', 'cool', 'turbo', 'viridis', 'magma', 'sls', 'a', 'b', 'bb'];
   const scales = ['linear', 'log', 'histeq', 'power', 'sqrt', 'squared', 'asinh', 'sinh'];
+  // @ts-ignore
+  const JS9 = window.JS9;
 
   return (
     <div hidden={props.hidden}>
       <div style={{ paddingBottom: '0.2em' }}>
         <Button.Group basic>
-          <Button icon='home' onClick={() => JS9.SetZoom('toFit')} />
+          <Button icon='home' onClick={() => JS9.SetZoom(1)} />
           <Button icon='zoom in' onClick={() => JS9.SetZoom('in')} />
-          <Button icon='expand arrows alternate' onClick={() => JS9.SetZoom(1)} />
           <Button icon='zoom out' onClick={() => JS9.SetZoom('out')} />
+          <Button icon='expand arrows alternate' onClick={() => JS9.SetZoom('toFit')} />
         </Button.Group>
         {' '}
         <Button.Group basic>
-          <Button icon='angle left' onClick={() => JS9.DisplayNextImage(-1)} />
-          <Button icon='angle right' onClick={() => JS9.DisplayNextImage(1)} />
+          <Button icon='angle left' onClick={() => {
+            JS9.SyncImages(['zoom', 'pan']);
+            JS9.DisplayNextImage(-1)
+          }} />
+          <Button icon='angle right' onClick={() => {
+            JS9.SyncImages(['zoom', 'pan']);
+            JS9.DisplayNextImage(1)
+          }} />
         </Button.Group>
         {' '}
         <Button.Group basic>
@@ -107,11 +115,10 @@ export const FitsPanel = (props) => {
             if (s >= 0) JS9.SetScale(scales[(s + 1) % scales.length]);
             else JS9.SetScale(scales[0]);
           }} />
-          <Button icon={sync ? 'lock' : 'lock open'} onClick={() => {
-            if (sync) JS9.SyncImages(['flip', 'pan', 'rot90', 'rotate', 'scale'], null, {reprocicate: true, syncwcs: true});
-            else JS9.SyncImages(false);
-            setSync(!sync);
-          }}/>
+        </Button.Group>
+        {' '}
+        <Button.Group basic>
+          <Button icon={{ name: 'trash', color: 'red' }} onClick={() => JS9.CloseImage()} />
         </Button.Group>
       </div>
       <div className="JS9" id='JS9' data-width="400px" data-height="400px"></div>
@@ -123,7 +130,6 @@ export const FitsPanel = (props) => {
 
 const DownloadProducts = observer((props) => {
   const [sampActive, setSampActive] = React.useState(false);
-  const [js9, setJs9] = React.useState(false);
   const connector = React.useRef(new samp.samp.Connector("Sender"));
 
   React.useEffect(() => {
@@ -133,12 +139,6 @@ const DownloadProducts = observer((props) => {
       my_interval && clearInterval(my_interval);
     }))(interval);
   }, [])
-
-  const loadFits = action((e, filename) => {
-    const l = window.location;
-    const url = l.protocol + '//' + l.hostname + ':' + l.port + '/app/products/' + getCookie('session_id') + '/' + filename;
-    state4.fitsFile = { url: url, name: filename, coosys: props.coosys }
-  });
 
   const loadSampImage = (e, filename) => {
     const l = window.location;
@@ -165,43 +165,27 @@ const DownloadProducts = observer((props) => {
 
   const js9options = { scale: "log" };
   return (
-    <>
-      <div style={{ paddingBottom: '0.2em' }}>
-        <Button icon='external alternate' labelPosition='right' disabled={js9}
-          content='Open the JS9 viewer' onClick={() => {
-            let link = document.createElement('link');
-            link.type = 'text/css';
-            link.rel = 'stylesheet';
-            link.href = 'https://js9.si.edu/js9/js9-allinone.css';
-            document.documentElement.firstChild.appendChild(link);
-            if (window.JS9 === undefined || window.JS9.NAME === undefined) {
-              let script = document.createElement('script');
-              script.src = 'https://js9.si.edu/js9/js9-allinone.js';
-              document.documentElement.firstChild.appendChild(script);
-            }
-            setJs9(true);
-        }} />
-      </div>
-      <div>
-        {_.map(props.products, name => (
-          <span key={name}>
-            <Button.Group>
-              <Button animated='vertical' color={products[name].color}
-                href={'/app/download?filename=' + products[name].filename}>
-                <Button.Content hidden content='Download' />
-                <Button.Content visible content={products[name].text} />
-              </Button>
-              <Button color={products[name].color} basic icon={{ name: 'eye' }}
-                disabled={!js9} onClick={() =>
-                  JS9.Load('/app/download?filename=' + products[name].filename, js9options)} />
-              <Button color={products[name].color} basic icon={{name: 'feed', className: 'faa-flash'}}
-                disabled={!sampActive} onClick={e => loadSampImage(e, products[name].filename)} />
-            </Button.Group>
-            {' '}
-          </span>
-        ))}
-      </div>
-    </>
+    <div>
+      {_.map(props.products, name => (
+        <span key={name}>
+          <Button.Group>
+            <Button animated='vertical' color={products[name].color}
+              href={'/app/download?filename=' + products[name].filename}>
+              <Button.Content hidden content='Download' />
+              <Button.Content visible content={products[name].text} />
+            </Button>
+            <Button color={products[name].color} basic icon={{ name: 'eye' }}
+              onClick={() => {
+                // @ts-ignore
+                JS9.Load('/app/download?filename=' + products[name].filename, js9options);
+              }} />
+            <Button color={products[name].color} basic icon={{name: 'feed', className: 'faa-flash'}}
+              disabled={!sampActive} onClick={e => loadSampImage(e, products[name].filename)} />
+          </Button.Group>
+          {' '}
+        </span>
+      ))}
+    </div>
   );
 });
 
