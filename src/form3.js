@@ -14,8 +14,7 @@ import { Slider } from './slider.js'
 import { Angle } from './angle.js';
 import { sphereBox, sphereBoxCorners, sphereCircle } from './spherical.js'
 import { galactic2equatorial, equatorial2galactic } from './coordinates.js'
-// import './css/slider.css'
-const WCS = require('./wcs.js')
+import { WCS } from './wcs.js'
 
 configure({ enforceActions: 'observed' });
 
@@ -256,9 +255,10 @@ validators = {
       for (let n = 0; n < xy[0].length; n++)
         [xy[0][n], xy[1][n]] = equatorial2galactic(xy[0][n], xy[1][n]);
     }
-
     for (let n = 0; n < xy[0].length; n++)
       [xy[0][n], xy[1][n]] = wcs.sky2pix(xy[0][n], xy[1][n]);
+    wcs.free();
+    
     // Fix the header
     const border = 10
     const xMin = _.min(xy[0]), yMin = _.min(xy[1]), xMax = _.max(xy[0]), yMax = _.max(xy[1]);
@@ -556,7 +556,7 @@ export const FormSVG = observer((props) => {
   const lonStep = (lonMax - lonMin) / nx, latStep = (latMax - latMin) / ny;
   const cone = state3.state1.shape === 'C';
   const border = cone ? circle(wcs, lonCtr, latCtr, radius) : box(wcs, lonCtr, latCtr, lonWidth, latWidth);
-  return (
+  const result = (
     <svg height='400' width='400' viewBox={`${-b} ${-b} ${n1 + 2 * b} ${n2 + 2 * b}`}
       preserveAspectRatio='xMinYMin meet'>
       <defs>
@@ -586,6 +586,8 @@ export const FormSVG = observer((props) => {
       </g>
     </svg>
   );
+  wcs.free();
+  return result;
 })
 
 export function MyForm3(props) {
