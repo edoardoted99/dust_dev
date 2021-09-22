@@ -222,6 +222,10 @@ export class Form0State extends FormState {
     else this.customCatalog = value;
   }
 
+  @computed({ keepAlive: true }) get filled() {
+    return ((this.queryType === 'L' && this.localfile) || (this.catalog && this.server));
+  }
+
   @computed({ keepAlive: true }) get bandlist() {
     let sbandlist = this.bandselection, cbandlist = _.map(this.catalogProperties.bandlist, 0);
     return this.queryType === 'S' ? sbandlist : cbandlist;
@@ -366,7 +370,7 @@ export class Form0State extends FormState {
   }
 
   @computed({ keepAlive: true }) get coords() {
-    if ((this.queryType === 'L' && this.localfile) || (this.catalog && this.server)) {
+    if (this.filled) {
       let coords;
       if (this.queryType === 'S') coords = datasetsDict[this.catalog].coords;
       else coords = this.catalogProperties.coords || [];
@@ -377,7 +381,7 @@ export class Form0State extends FormState {
 
   @computed({ keepAlive: true }) get bandsWithFields() {
     let result1 = [], result2 = {}, result3 = {};
-    if ((this.queryType === 'L' && this.localfile) || (this.catalog && this.server)) {
+    if (this.filled) {
       let allowedBands, lastColNum = -1;
       if (this.queryType === 'S')
         allowedBands = datasetsDict[this.catalog].bands;
@@ -402,7 +406,7 @@ export class Form0State extends FormState {
 
   @computed({ keepAlive: true }) get morphclassesWithFields() {
     let result1 = [], result2 = {};
-    if ((this.queryType === 'L' && this.localfile) || (this.catalog && this.server)) {
+    if (this.filled) {
       if (this.queryType === 'S') {
         let allowedClasses = datasetsDict[this.catalog].classes;
         if (_.isPlainObject(allowedClasses)) allowedClasses = allowedClasses[this.server];
