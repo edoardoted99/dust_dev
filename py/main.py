@@ -455,14 +455,14 @@ class AppServer:
         now = time.time()
         grace_time = GRACE_TIME * 3600
         if LAST_CLEAN_RUN is None or now - LAST_CLEAN_RUN > grace_time:
-            for path in glob.glob('local_cache'):
+            for path in glob.glob('local_cache/*'):
                 try:
                     stat = os.stat(path)
                     if now - stat.st_ctime > grace_time:
                         os.unlink(path)
                 except Exception:
                     pass
-            for path in glob.glob('processes'):
+            for path in glob.glob('processes/*'):
                 try:
                     stat = os.stat(path)
                     if now - stat.st_ctime > grace_time:
@@ -1488,12 +1488,16 @@ if __name__ == '__main__':
                 'tools.staticdir.root': os.path.abspath('..'),
                 'tools.staticdir.on': True,
                 'tools.staticdir.dir': './dist' if DEVEL else './build',
-                'tools.staticdir.index': 'index.html'
+                'tools.staticdir.index': 'index.html',
+                'tools.gzip.on': True,
+                'tools.gzip.mime_types': ['text/*', 'application/*']
             },
             '/static': {
                 'tools.staticdir.on': True,
                 'tools.staticdir.dir': STATIC_PATH,
-                'tools.staticdir.content_types': {'fits': 'application/octet-stream'}
+                'tools.staticdir.content_types': {'fits': 'application/octet-stream'},
+                'tools.gzip.on': True,
+                'tools.gzip.mime_types': ['text/*', 'application/*']
             }
         }
         if DEVEL:
