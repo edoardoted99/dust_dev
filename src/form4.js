@@ -85,15 +85,21 @@ export const FitsPanel = (props) => {
     <div hidden={props.hidden}>
       <div style={{ paddingBottom: '0.2em' }}>
         <Button.Group basic>
-          <Button icon='home' onClick={() => JS9.SetZoom('toFit')} />
+          <Button icon='home' onClick={() => JS9.SetZoom(1)} />
           <Button icon='zoom in' onClick={() => JS9.SetZoom('in')} />
-          <Button icon='expand arrows alternate' onClick={() => JS9.SetZoom(1)} />
           <Button icon='zoom out' onClick={() => JS9.SetZoom('out')} />
+          <Button icon='expand arrows alternate' onClick={() => JS9.SetZoom('toFit')} />
         </Button.Group>
         {' '}
         <Button.Group basic>
-          <Button icon='angle left' onClick={() => JS9.DisplayNextImage(-1)} />
-          <Button icon='angle right' onClick={() => JS9.DisplayNextImage(1)} />
+          <Button icon='angle left' onClick={() => {
+            JS9.SyncImages(['zoom', 'pan']);
+            JS9.DisplayNextImage(-1)
+          }} />
+          <Button icon='angle right' onClick={() => {
+            JS9.SyncImages(['zoom', 'pan']);
+            JS9.DisplayNextImage(1)
+          }} />
         </Button.Group>
         {' '}
         <Button.Group basic>
@@ -109,11 +115,10 @@ export const FitsPanel = (props) => {
             if (s >= 0) JS9.SetScale(scales[(s + 1) % scales.length]);
             else JS9.SetScale(scales[0]);
           }} />
-          <Button icon={sync ? 'lock' : 'lock open'} onClick={() => {
-            if (sync) JS9.SyncImages(['flip', 'pan', 'rot90', 'rotate', 'scale'], null, {reprocicate: true, syncwcs: true});
-            else JS9.SyncImages(false);
-            setSync(!sync);
-          }}/>
+        </Button.Group>
+        {' '}
+        <Button.Group basic>
+          <Button icon={{ name: 'trash', color: 'red' }} onClick={() => JS9.CloseImage()} />
         </Button.Group>
       </div>
       <div className="JS9" id='JS9' data-width="400px" data-height="400px"></div>
@@ -170,9 +175,10 @@ const DownloadProducts = observer((props) => {
               <Button.Content visible content={products[name].text} />
             </Button>
             <Button color={products[name].color} basic icon={{ name: 'eye' }}
-              onClick={() =>
+              onClick={() => {
                 // @ts-ignore
-                JS9.Load('/app/download?filename=' + products[name].filename, js9options)} />
+                JS9.Load('/app/download?filename=' + products[name].filename, js9options);
+              }} />
             <Button color={products[name].color} basic icon={{name: 'feed', className: 'faa-flash'}}
               disabled={!sampActive} onClick={e => loadSampImage(e, products[name].filename)} />
           </Button.Group>
