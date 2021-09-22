@@ -85,10 +85,18 @@ export const FitsPanel = (props) => {
     <div hidden={props.hidden}>
       <div style={{ paddingBottom: '0.2em' }}>
         <Button.Group basic>
-          <Button icon='home' onClick={() => JS9.SetZoom(1)} />
+          <Button icon='home' onClick={() => {
+            let wcs = JS9.GetWCS();
+            JS9.SetZoom(1);
+            JS9.SetPan(wcs.crpix1, wcs.crpix2);
+          }} />
           <Button icon='zoom in' onClick={() => JS9.SetZoom('in')} />
           <Button icon='zoom out' onClick={() => JS9.SetZoom('out')} />
-          <Button icon='expand arrows alternate' onClick={() => JS9.SetZoom('toFit')} />
+          <Button icon='expand arrows alternate' onClick={() => {
+            let wcs = JS9.GetWCS();
+            JS9.SetZoom('toFit')
+            JS9.SetPan(wcs.crpix1, wcs.crpix2);
+          }} />
         </Button.Group>
         {' '}
         <Button.Group basic>
