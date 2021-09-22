@@ -13,7 +13,7 @@ import { MyForm0, state0 } from './form0.js'
 import { MyForm1, state1 } from './form1.js'
 import { MyForm2, state2 } from './form2.js'
 import { MyForm3, FormSVG, state3 } from './form3.js'
-import { MyForm4, state4 } from './form4.js'
+import { MyForm4, state4, FitsPanel } from './form4.js'
 import { Angle } from './angle.js';
 import { downloadJSON } from './downloadJSON.js'
 import { AladinForm } from './aladin.js'
@@ -203,7 +203,7 @@ export function MyApp(props)
     <div>
       <AppStepGroup step={step} completed={completed} setStep={setStep} />
       <Container>
-        <Grid stackable columns={step < 4 ? 2 : 1}>
+        <Grid stackable columns='2'>
           <Grid.Column style={{ flex: "1" }}>
             {form}
           </Grid.Column>
@@ -212,21 +212,16 @@ export function MyApp(props)
               <AladinForm cooform={cooforms[step]} state0={state0} />
               : step == 3 ?
                 <FormSVG state1={state1} />
-                : <FitsForm state0={state0} />
+                :
+                <></>
             }
+            <FitsPanel hidden={step != 4} state0={state0}/>
             </Grid.Column>
         </Grid>
       </Container>
     </div>
   );
 }
-
-const FitsForm = observer(props => {
-  if (state4.fitsFile) {
-    return <AladinForm fitsURL={state4.fitsFile.url} fitsName={state4.fitsFile.name}
-      fitsCoosys={state4.fitsFile.coosys} {...props} />;
-  } else return <></>;
-})
 
 const AppStepGroup = observer(props => {
   const step = props.step, completed = props.completed;

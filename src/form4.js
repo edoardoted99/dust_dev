@@ -48,7 +48,7 @@ function getCookie(cname) {
 }
 
 const LogArea = observer((props) => {
-  const [active, setActive] = React.useState(true);
+  const [active, setActive] = React.useState(false);
   function formatTime(time) {
     let t = Math.round(time);
     const seconds = t % 60;
@@ -74,8 +74,56 @@ const LogArea = observer((props) => {
   );
 });
 
+export const FitsPanel = (props) => {
+  const [sync, setSync] = React.useState(false);
+  const colormaps = ['grey', 'heat', 'cool', 'turbo', 'viridis', 'magma', 'sls', 'a', 'b', 'bb'];
+  const scales = ['linear', 'log', 'histeq', 'power', 'sqrt', 'squared', 'asinh', 'sinh'];
+
+  return (
+    <div hidden={props.hidden}>
+      <div style={{ paddingBottom: '0.2em' }}>
+        <Button.Group basic>
+          <Button icon='home' onClick={() => JS9.SetZoom('toFit')} />
+          <Button icon='zoom in' onClick={() => JS9.SetZoom('in')} />
+          <Button icon='expand arrows alternate' onClick={() => JS9.SetZoom(1)} />
+          <Button icon='zoom out' onClick={() => JS9.SetZoom('out')} />
+        </Button.Group>
+        {' '}
+        <Button.Group basic>
+          <Button icon='angle left' onClick={() => JS9.DisplayNextImage(-1)} />
+          <Button icon='angle right' onClick={() => JS9.DisplayNextImage(1)} />
+        </Button.Group>
+        {' '}
+        <Button.Group basic>
+          <Button icon='tint' onClick={() => {
+            let colormap = JS9.GetColormap().colormap;
+            let c = colormaps.indexOf(colormap);
+            if (c >= 0) JS9.SetColormap(colormaps[(c + 1) % colormaps.length]);
+            else JS9.SetColormap(colormaps[0]);
+          }} />
+          <Button icon='sliders horizontal' onClick={() => {
+            let scale = JS9.GetScale().scale;
+            let s = scales.indexOf(scale);
+            if (s >= 0) JS9.SetScale(scales[(s + 1) % scales.length]);
+            else JS9.SetScale(scales[0]);
+          }} />
+          <Button icon={sync ? 'lock' : 'lock open'} onClick={() => {
+            if (sync) JS9.SyncImages(['flip', 'pan', 'rot90', 'rotate', 'scale'], null, {reprocicate: true, syncwcs: true});
+            else JS9.SyncImages(false);
+            setSync(!sync);
+          }}/>
+        </Button.Group>
+      </div>
+      <div className="JS9" id='JS9' data-width="400px" data-height="400px"></div>
+      <div style={{ marginTop: '0.2em' }}></div>
+      <div className="JS9Statusbar" data-width="400px"></div>
+    </div>
+  );
+}
+
 const DownloadProducts = observer((props) => {
   const [sampActive, setSampActive] = React.useState(false);
+  const [js9, setJs9] = React.useState(false);
   const connector = React.useRef(new samp.samp.Connector("Sender"));
 
   React.useEffect(() => {
@@ -114,21 +162,45 @@ const DownloadProducts = observer((props) => {
     'XNICEST inverse variance': { text: 'NICER ivar', filename: 'xext_ivar.fits', color: 'pink' },
     'Star density': { text: 'Density', filename: 'density.fits', color: 'grey' }
   };
+
+  const js9options = { scale: "log" };
   return (
     <>
-      {_.map(props.products, name => (
-        <Button.Group key={name}>
-          <Button animated='vertical' color={products[name].color}
-            href={'/app/download?filename=' + products[name].filename}>
-            <Button.Content hidden content='Download' />
-            <Button.Content visible content={products[name].text} />
-          </Button>
-          <Button color={products[name].color} basic icon={{ name: 'globe' }}
-            onClick={e => loadFits(e, products[name].filename)} />
-          <Button color={products[name].color} basic icon={{name: 'feed', className: 'faa-flash'}}
-            disabled={!sampActive} onClick={e => loadSampImage(e, products[name].filename)} />
-        </Button.Group>
-      ))}
+      <div style={{ paddingBottom: '0.2em' }}>
+        <Button icon='external alternate' labelPosition='right' disabled={js9}
+          content='Open the JS9 viewer' onClick={() => {
+            let link = document.createElement('link');
+            link.type = 'text/css';
+            link.rel = 'stylesheet';
+            link.href = 'https://js9.si.edu/js9/js9-allinone.css';
+            document.documentElement.firstChild.appendChild(link);
+            if (window.JS9 === undefined || window.JS9.NAME === undefined) {
+              let script = document.createElement('script');
+              script.src = 'https://js9.si.edu/js9/js9-allinone.js';
+              document.documentElement.firstChild.appendChild(script);
+            }
+            setJs9(true);
+        }} />
+      </div>
+      <div>
+        {_.map(props.products, name => (
+          <span key={name}>
+            <Button.Group>
+              <Button animated='vertical' color={products[name].color}
+                href={'/app/download?filename=' + products[name].filename}>
+                <Button.Content hidden content='Download' />
+                <Button.Content visible content={products[name].text} />
+              </Button>
+              <Button color={products[name].color} basic icon={{ name: 'eye' }}
+                disabled={!js9} onClick={() =>
+                  JS9.Load('/app/download?filename=' + products[name].filename, js9options)} />
+              <Button color={products[name].color} basic icon={{name: 'feed', className: 'faa-flash'}}
+                disabled={!sampActive} onClick={e => loadSampImage(e, products[name].filename)} />
+            </Button.Group>
+            {' '}
+          </span>
+        ))}
+      </div>
     </>
   );
 });
@@ -254,9 +326,21 @@ export const MyForm4 = observer((props) => {
 `      <Message>
         <Message.Header>Thank you for using this service!</Message.Header>
         <p></p>
-        <p>The products requested are now being processed.</p>
-        <p>Please do not close this page: as soon as the processing is concluded, the
-        products you requested will be available here for you to download.</p>
+        {state4.state !== 'end' ?
+          <>
+            <p>The products requested are now being processed.</p>
+            <p>Please do not close this page: as soon as the processing is concluded, the
+              products you requested will be available here for you to download.</p>
+          </> :
+          <>
+            <p>The products are ready: you can download them using the button below.</p>
+            <p>All images can also be displayed in the right using the
+              <a href="https://js9.si.edu" target="_blank">JS9 viewer</a> or with a
+              <a href="https://www.ivoa.net/documents/SAMP/" target="_blank">SAMP</a>-enabled
+              desktop application (such as <a href="https://aladin.u-strasbg.fr" target="_blank">Aladin</a>
+              sky viewer).
+            </p>
+          </>}
         <Progress active={step >= 0 && state4.state === 'run'} value={step > 0 ? step : 0} total='12'
           progress={state4.state === 'run' ? 'ratio' : false} success={state4.state === 'end'}
           warning={state4.state === 'warning'} error={state4.state === 'error'} color='blue' >
