@@ -129,7 +129,7 @@ validators = {
   }
 
   handleProjection(e, { value }) {
-    const PVs = defaultPVs[value] || [], latpole = defaultLatpoles[value] || [];
+    const PVs = defaultPVs[value] || [], latpole = defaultLatpoles[value] || -1;
     for (let n = 0; n < 4; n++) {
       this.pv2[n] = (PVs[n] >= 0) ? ['0', '1', '', '0', '90', ''][PVs[n]] : '';
     }
