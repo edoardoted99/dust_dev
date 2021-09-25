@@ -204,6 +204,7 @@ validators = {
     header.CRPIX2 = naxis2 / 2;
     header.CRVAL1 = Math.round(crval1 * 1e6) / 1e6;
     header.CRVAL2 = Math.round(crval2 * 1e6) / 1e6;
+    // FIXME: remove next lines
     let nothing = {
       SIMPLE: "T", BITPIX: -32, NAXIS: 2,
       NAXIS1: naxis1, NAXIS2: naxis2,
