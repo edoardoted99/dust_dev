@@ -18,6 +18,17 @@ import { WCS } from './wcs.js'
 
 configure({ enforceActions: 'observed' });
 
+const checkHeader = (h) => {
+  const projection = h['CTYPE1'].substr(5);
+  if (h.NAXIS1 > 0 && h.NAXIS2 > 0 && h.CDELT2 > 0 && h.CRVAL2 >= -90 && h.CRVAL2 <= 90) {
+    const PVs = defaultPVs[projection] || [], latpole = defaultLatpoles[projection] || -1;
+    for (let n = 0; n < 4; n++)
+      if ([2,5].includes(PVs[n]) && !Number.isFinite(h['PV2_' + n])) return false;
+    if ((latpole == 2 || latpole == 5) && !Number.isFinite(h['LATPOLE'])) return false;
+  } else return false;
+  return true;
+}
+
 export class Form3State extends FormState {
   state1 = null;
   state2 = null;
@@ -46,7 +57,7 @@ export class Form3State extends FormState {
   @observable latMin = -90;
   @observable latMax = 90;
 
-validators = {
+  validators = {
     products: x => (x.length < 1) && 'Select at least one product',
     naxis1: x => !(x > 0 && x < 10000 && _.isInteger(parseFloat(x))) && 'Please enter a positive integer',
     naxis2: x => !(x > 0 && x < 10000 && _.isInteger(parseFloat(x))) && 'Please enter a positive integer',
@@ -57,10 +68,13 @@ validators = {
     scaleArcsec: x => !(_.isFinite(parseFloat(x)) && x > 0) && 'Please enter a valid number',
     crota2: x => !(x >= -180 && x <= 360) && 'Please enter a valid rotation',
     lonpole: x => !(x >= -180 && x <= 360) && 'Please enter a valid longitude',
-    latpole: x => !(x >= -90 && x <= 90) && 'Please enter a valid latitude',
+    latpole: x => !(x >= -90 && x <= 90 &&
+      (defaultLatpoles[this.projection] != 5 || Number.isFinite(parseFloat(x)))) && 'Please enter a valid latitude',
     smoothpar: x => !(x >= 0.1 && x <= 10) && 'Please enter a valid number',
     clipping: x => !(x >= 1 && x <= 10) && 'Please enter a valid number',
-    pv2: xs => _.map(xs, x => !(x === '' || (x > -10000 && x < 10000)) && 'The coefficient, if present, must be a valid number'),
+    pv2: xs => _.map(xs, (x,n) => !(x > -360 && x < 360 && 
+      ([2, 5, -1, undefined].includes((defaultPVs[this.projection] || [])[n]) ||
+        Number.isFinite(parseFloat(x)))) && 'The parameter must be a valid number'),
     // Empty validators
     cooSys: x => false,
     clipIters: x => false
@@ -173,13 +187,16 @@ validators = {
     return header
   }
 
+  @computed({ keepAlive: true }) get validWCS() {
+    return checkHeader(this.header);
+  }
+
   @action.bound setDefault() {
     this.starsPerPixel = 5.0;
     this.guessWCS();
   }
 
   @action.bound guessWCS() {
-    let lonMin, lonMax, latMin, latMax;
     let crval1 = this.state1.lonCtrAngle.degrees, crval2 = this.state1.latCtrAngle.degrees;
     let lonRad = (this.state1.shape === 'C') ? this.state1.radiusAngle.degrees : this.state1.lonWdtAngle.degrees / 2;
     let latRad = (this.state1.shape === 'C') ? this.state1.radiusAngle.degrees : this.state1.latWdtAngle.degrees / 2;
@@ -204,20 +221,11 @@ validators = {
     header.CRPIX2 = naxis2 / 2;
     header.CRVAL1 = Math.round(crval1 * 1e6) / 1e6;
     header.CRVAL2 = Math.round(crval2 * 1e6) / 1e6;
-    // FIXME: remove next lines
-    let nothing = {
-      SIMPLE: "T", BITPIX: -32, NAXIS: 2,
-      NAXIS1: naxis1, NAXIS2: naxis2,
-      CRPIX1: naxis1 / 2.0, CRPIX2: naxis2 / 2.0,
-      CTYPE1: "GLON-TAN", CTYPE2: "GLAT-TAN",
-      CRVAL1: Math.round(crval1 * 1e6) / 1e6, CRVAL2: Math.round(crval2 * 1e6) / 1e6,
-      CDELT1: -scale, CDELT2: scale,
-      CROTA2: 0.0, EQUINOX: 2000.0 
-    };
     return this.improveWCS(header);
   }
 
   @action.bound improveWCS(header) {
+    if (!checkHeader(header)) return header;
     const wcs = new WCS();
     let xy = [[], []];
     const nr = 5, nt = 32;
@@ -527,6 +535,11 @@ export const FormSVG = observer((props) => {
     sphereCircle(points, lonCtr, latCtr, radius, -npts);
     return wcsPath(wcs, points, true);
   }
+
+  // Check if we can at all do anything!
+  if (!state3.validWCS) return (
+    <></>
+  );
 
   const wcs = new WCS();
   const header = state3.header;

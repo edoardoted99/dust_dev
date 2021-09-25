@@ -326,11 +326,12 @@ export const MyForm4 = observer((props) => {
           </> :
           <>
             <p>The products are ready: you can download them using the button below.</p>
-            <p>All images can also be displayed in the right using the
-              <a href="https://js9.si.edu" target="_blank">JS9 viewer</a> or with a
-              <a href="https://www.ivoa.net/documents/SAMP/" target="_blank">SAMP</a>-enabled
-              desktop application (such as <a href="https://aladin.u-strasbg.fr" target="_blank">Aladin</a>
-              sky viewer).
+            <p>All images can also be displayed in the right panel using
+              the <a href="https://js9.si.edu" target="_blank">JS9 viewer</a> or in your
+              desktop with
+              a <a href="https://www.ivoa.net/documents/SAMP/" target="_blank">SAMP</a>-enabled
+              application (such as
+              the <a href="https://aladin.u-strasbg.fr" target="_blank">Aladin</a> sky viewer).
             </p>
           </>}
         <Progress active={step >= 0 && state4.state === 'run'} value={step > 0 ? step : 0} total='12'
