@@ -4,7 +4,8 @@
 import React from 'react'
 import { autorun, action } from 'mobx'
 import { observer } from 'mobx-react'
-import { Button, Divider } from 'semantic-ui-react'
+import { Button } from 'semantic-ui-react'
+import { Helper } from './helper.js'
 import { galactic2equatorial } from './coordinates.js'
 import { sphereBoxCorners, sphereCircle, sphereBox } from './spherical.js'
 import './css/aladin.css';
@@ -215,41 +216,59 @@ if (window.A === undefined) {
         {aladin.current ?
           <div style={{ paddingBottom: '0.2em' }}>
             <Button.Group basic>
-              <Button icon='home' onClick={() => {
-                aladin.current.gotoPosition(0, 0);
-                aladin.current.setFov(180);
-              }} />
-              <Button icon='zoom in' onClick={() => aladin.current.setFov(aladin.current.getFov()[0] / 2)} />
-              <Button icon='zoom out' onClick={() => aladin.current.setFov(Math.min(180, aladin.current.getFov()[0] * 2))} />
+              <Helper content='Move to the original position'>
+                <Button icon='home' onClick={() => {
+                  aladin.current.gotoPosition(0, 0);
+                  aladin.current.setFov(180);
+                }} />
+              </Helper>
+              <Helper content='Zoom in'>
+                <Button icon='zoom in' onClick={() => aladin.current.setFov(aladin.current.getFov()[0] / 2)} />
+              </Helper>
+              <Helper content='Zoom out'>
+                <Button icon='zoom out' onClick={() => aladin.current.setFov(Math.min(180, aladin.current.getFov()[0] * 2))} />
+              </Helper>
               {props.cooform ?
                 <>
-                  <Button icon='eye' disabled={props.cooform.lonCtr.length <= 1 || props.cooform.latCtr.length <= 1}
-                    onClick={() => {
-                      let fov = 0;
-                      aladin.current.gotoPosition(props.cooform.lonCtrAngle.degrees, props.cooform.latCtrAngle.degrees);
-                      if (props.cooform.shape === 'C')
-                        fov = props.cooform.radiusAngle.degrees * 2;
-                      else
-                        fov = Math.max(props.cooform.lonWdtAngle.degrees, props.cooform.latWdtAngle.degrees);
-                      if (fov > 0) {
-                        if (fov < 0.1) fov = 0.1;
-                        aladin.current.setFov(fov * 1.2);
-                      }
-                    }} />
-                  <Button icon='crosshairs' onClick={copyPosition} />
+                  <Helper content='Show the area selected in the form to the right here in the map'>
+                    <Button icon='eye' disabled={props.cooform.lonCtr.length <= 1 || props.cooform.latCtr.length <= 1}
+                      onClick={() => {
+                        let fov = 0;
+                        aladin.current.gotoPosition(props.cooform.lonCtrAngle.degrees, props.cooform.latCtrAngle.degrees);
+                        if (props.cooform.shape === 'C')
+                          fov = props.cooform.radiusAngle.degrees * 2;
+                        else
+                          fov = Math.max(props.cooform.lonWdtAngle.degrees, props.cooform.latWdtAngle.degrees);
+                        if (fov > 0) {
+                          if (fov < 0.1) fov = 0.1;
+                          aladin.current.setFov(fov * 1.2);
+                        }
+                      }} />
+                  </Helper>
+                  <Helper content='Copy the position of the cross here to the form to the right'>
+                    <Button icon='crosshairs' onClick={copyPosition} />
+                  </Helper>
                 </>
                 : <></>
               }
             </Button.Group>
             {' '}
             <Button.Group basic>
-              <Button icon='globe' onClick={handleSurvey} />
+              <Helper content='Change the survey shown'>
+                <Button icon='globe' onClick={handleSurvey} />
+              </Helper>
               {props.fitsURL === undefined ?
-                <Button icon='star outline' onClick={handleConstellation} />
+                <Helper content='Display the constellations'>
+                  <Button icon='star outline' onClick={handleConstellation} />
+                </Helper>
                 :
-                <Button icon='tint' onClick={handleFitsColormap} />
+                <Helper content='Change the fits colormap'>
+                  <Button icon='tint' onClick={handleFitsColormap} />
+                </Helper>
               }
-              <Button icon='flask' onClick={handleColormap} />
+              <Helper content='Change the colormap'>
+                <Button icon='flask' onClick={handleColormap} />
+              </Helper>
             </Button.Group>
           </div>
           : <></>

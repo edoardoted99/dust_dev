@@ -9,7 +9,7 @@ import { observable, computed, configure, action } from 'mobx'
 import { observer } from 'mobx-react'
 import {
   Loader, Dimmer, Form, Header, Button, Accordion, Message,
-  FormField, Input, Label, Icon, Progress, Dropdown
+  FormField, Input, Label, Icon, Progress, Dropdown, Transition
 } from 'semantic-ui-react'
 import { serversDict, datasetsDict, colorDict } from './datasets.js'
 import { FormState } from './formstate.js'
@@ -1128,7 +1128,7 @@ export const MyForm0 = observer((props) => {
           <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
             disabled={state0.messageType !== null && state0.messageType !== 'success'} onClick={handleNext} />
         </Helper>
-        <HelperButton />
+        <HelperButton transition />
         <Button as='label' htmlFor='file' icon='upload' floated='right' />
         <input type='file' id='file' hidden onChange={props.uploader} />
       </Form>

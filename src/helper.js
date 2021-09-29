@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 
 import { observable, action } from 'mobx'
 import { observer } from 'mobx-react'
-import { Popup, Button } from 'semantic-ui-react'
+import { Popup, Button, Transition } from 'semantic-ui-react'
 
 /**
  * If true, hover help through popups is active
@@ -19,9 +19,19 @@ export const Helper = observer((props) => {
 });
 
 export const HelperButton = observer((props) => {
-  return (
-    <Button icon='help' toggle active={helper.get()}
-      onClick={
-        action(() => helper.set(!helper.get()))
-      } floated='right' />);
+  if (props.transition) {
+    return (
+      <Transition animation='bounce' duration={1000} transitionOnMount>
+        <Button icon='help' toggle active={helper.get()}
+          onClick={
+            action(() => helper.set(!helper.get()))
+          } floated='right' />
+      </Transition>); 
+  } else {
+    return (
+      <Button icon='help' toggle active={helper.get()}
+        onClick={
+          action(() => helper.set(!helper.get()))
+        } floated='right' />);
+  }
 });

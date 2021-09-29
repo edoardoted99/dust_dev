@@ -475,12 +475,12 @@ export const CooForm = observer((props) => {
       <FormSymbad cooform={state} />
 
       <Form.Group>
-        <Helper wide content={'The center' + state.lonName +
+        <Helper wide content={'The ' + state.lonName + ' of the center' +
         '; use the globe to the right to transform the input format'}>
           <FormAngle label={'Center ' + state.lonName} width={8} name='lonCtr'
           type={state.cooSys != 'E' ? 'longitude' : 'hms'} cooform={state} />
         </Helper>
-        <Helper wide content={'The center' + state.latName +
+        <Helper wide content={'The ' + state.latName + ' of the center' +
         '; use the globe to the right to transform the input format'}>
           <FormAngle label={'Center ' + state.latName} width={8} name='latCtr'
             type='latitude' cooform={state} />
