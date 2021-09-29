@@ -5,6 +5,7 @@ import _ from 'lodash'
 import { observable, computed, configure, action } from 'mobx'
 import { FormState } from './formstate.js'
 import { Angle } from './angle.js'
+import { Helper } from './helper.js'
 import { galactic2equatorial, equatorial2galactic } from './coordinates.js'
 
 configure({ enforceActions: 'observed' });
@@ -124,7 +125,7 @@ export class CooFormState extends FormState {
     shape: x => false,
     object: x => false,
     lonType: x => false,
-    latType: x => false
+    latType: x => false,
   };
 
   cooValidate() {
@@ -402,7 +403,7 @@ export class CooFormState extends FormState {
 
 import React from 'react'
 import { observer } from 'mobx-react' 
-import { Grid, Header, Form, Divider } from 'semantic-ui-react'
+import { Grid, Header, Form, Popup } from 'semantic-ui-react'
 import { InputAngle } from './inputangle.js'
 import { sphereBoxCorners, vec2ang } from './spherical.js';
 
@@ -413,23 +414,27 @@ const FormOptions = observer((props) => {
       <Grid.Row>
         <Grid.Column width={10} stretched>
           <Header as='h3' dividing>Coordinate system</Header>
-          <Form.Group inline>
-            <Form.Radio label='Galatic' name='cooSys' value='G'
-              checked={state.cooSys === 'G'} onChange={state.handleChange} {...props} />
-            <Form.Radio label='Equatorial (hms)' name='cooSys' value='E'
-              checked={state.cooSys === 'E'} onChange={state.handleChange} {...props} />
-            <Form.Radio label='Equatorial (degrees)' name='cooSys' value='D'
-              checked={state.cooSys === 'D'} onChange={state.handleChange} {...props} />
-          </Form.Group>
+          <Helper wide content='The coordinate system used for the area selection'>
+            <Form.Group inline>
+              <Form.Radio label='Galatic' name='cooSys' value='G'
+                checked={state.cooSys === 'G'} onChange={state.handleChange} {...props} />
+              <Form.Radio label='Equatorial (hms)' name='cooSys' value='E'
+                checked={state.cooSys === 'E'} onChange={state.handleChange} {...props} />
+              <Form.Radio label='Equatorial (degrees)' name='cooSys' value='D'
+                checked={state.cooSys === 'D'} onChange={state.handleChange} {...props} />
+            </Form.Group>
+          </Helper>
         </Grid.Column>
         <Grid.Column width={6} stretched>
           <Header as='h3' dividing>Shape</Header>
-          <Form.Group inline>
-            <Form.Radio label='Cone' name='shape' value='C'
-              checked={state.shape === 'C'} onChange={state.handleShapeChange} {...props} />
-            <Form.Radio label='Slice' name='shape' value='B'
-              checked={state.shape === 'B'} onChange={state.handleShapeChange} {...props} />
-          </Form.Group>
+          <Helper wide content='The shape of the selection'>
+            <Form.Group inline>
+              <Form.Radio label='Cone' name='shape' value='C'
+                checked={state.shape === 'C'} onChange={state.handleShapeChange} {...props} />
+              <Form.Radio label='Slice' name='shape' value='B'
+                checked={state.shape === 'B'} onChange={state.handleShapeChange} {...props} />
+            </Form.Group>
+          </Helper>
         </Grid.Column>
       </Grid.Row>
     </Grid>
@@ -439,9 +444,12 @@ const FormOptions = observer((props) => {
 const FormSymbad = observer((props) => {
   let state = props.cooform;
   return (
-    <Form.Input label='Object name (Simbad resolved)' action='Search' placeholder='object name' width={16}
-      onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && state.handleSimbad(e)}
-      {...state.props('object')} onBlur={state.handleSimbad} {...props} />);
+    <Helper wide='very' content='The center of the area can also be entered 
+      using an object name, which will be resolved by Simbad'>
+      <Form.Input label='Object name (Simbad resolved)' action='Search' placeholder='object name' width={16}
+        onKeyPress={(e) => ((e.keyCode || e.which || e.charCode || 0) === 13) && state.handleSimbad(e)}
+        {...state.props('object')} onBlur={state.handleSimbad} {...props} />
+    </Helper>);
 });
 
 const FormAngle = observer((props) => {
@@ -467,21 +475,36 @@ export const CooForm = observer((props) => {
       <FormSymbad cooform={state} />
 
       <Form.Group>
-        <FormAngle label={'Center ' + state.lonName} width={8} name='lonCtr'
+        <Helper wide content={'The center' + state.lonName +
+        '; use the globe to the right to transform the input format'}>
+          <FormAngle label={'Center ' + state.lonName} width={8} name='lonCtr'
           type={state.cooSys != 'E' ? 'longitude' : 'hms'} cooform={state} />
-        <FormAngle label={'Center ' + state.latName} width={8} name='latCtr'
-          type='latitude' cooform={state} />
+        </Helper>
+        <Helper wide content={'The center' + state.latName +
+        '; use the globe to the right to transform the input format'}>
+          <FormAngle label={'Center ' + state.latName} width={8} name='latCtr'
+            type='latitude' cooform={state} />
+        </Helper>
       </Form.Group>
       {state.shape === 'B' ?
         <Form.Group>
-          <FormAngle label='Width' width={8} name='lonWdt'
-            type={state.cooSys != 'E' ? 'longitude' : 'hms'} cooform={state}/>
-          <FormAngle label='Height' width={8} name='latWdt'
-            type='longitude' cooform={state} />
+          <Helper wide
+            content='The box width; use the globe to the right to transform the input format'>
+            <FormAngle label='Width' width={8} name='lonWdt'
+              type={state.cooSys != 'E' ? 'longitude' : 'hms'} cooform={state}/>
+          </Helper>
+          <Helper wide
+            content='The box height; use the globe to the right to transform the input format'>
+            <FormAngle label='Height' width={8} name='latWdt'
+              type='longitude' cooform={state} />
+          </Helper>
         </Form.Group>
         :
-        <FormAngle label='Radius' width={8} name='radius'
-          type='longitude' cooform={state} />
+        <Helper wide
+          content='The selection disk radius; use the globe to the right to transform the input format'>
+          <FormAngle label='Radius' width={8} name='radius'
+            type='longitude' cooform={state} />
+        </Helper>
       }
     </>);
 });

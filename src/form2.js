@@ -9,6 +9,7 @@ import { observer } from 'mobx-react'
 import { Container, Icon, Dimmer, Message, Form, Header, Button, Divider } from 'semantic-ui-react'
 import { CooFormState, CooForm } from './cooform.js'
 import { InputUnit } from './inputunit.js'
+import { Helper, HelperButton } from './helper.js';
 
 configure({ enforceActions: 'observed' });
 
@@ -72,42 +73,59 @@ state2.step = 2;
 
 const NumComponents = observer((props) => {
   return (
-    <Form.Dropdown selection fluid {...state2.props('numComponents')} label='Number of components'
-      options={_.map(_.range(1, 6), n => ({ text: String(n), value: n }))} placeholder='# components'
-      {...props} />
+    <Helper wide content='The number of Gaussian distributions to use in the mixture probability that describes 
+    the colors of stars. Use a small number for fast calculations. Large values (generally) can capture better
+    substructures in the color distribution, resulting in slightly reduced errors.'>
+      <Form.Dropdown selection fluid {...state2.props('numComponents')} label='Number of components'
+        options={_.map(_.range(1, 6), n => ({ text: String(n), value: n }))} placeholder='# components'
+        {...props} />
+    </Helper>
   );
 });
 
 const ExtinctionSteps = observer((props) => {
   return (
-    <Form.Dropdown selection fluid {...state2.props('extinctionSteps')} label='Extinction steps'
-      options={_.map(_.range(1, 9), n => ({ text: String(n), value: n }))} placeholder='# steps'
-      {...props} />
+    <Helper wide content='The algorithm is able to simulate the effects of extinction on the population of control 
+    field stars and to perform a new training. This is useful, e.g., when the original background population is composed of
+    different classes of objects with different intrinsic colors, with one class fainter than the other (for example, stars
+    and galaxies). When extinction occurs, the fainter objects are missing and the distribution of observed colors changes'>
+      <Form.Dropdown selection fluid {...state2.props('extinctionSteps')} label='Extinction steps'
+        options={_.map(_.range(1, 9), n => ({ text: String(n), value: n }))} placeholder='# steps'
+        {...props} />
+    </Helper>
   );
 });
 
 const ExtinctionSubsteps = observer((props) => {
   return (
-    <Form.Dropdown selection fluid {...state2.props('extinctionSubsteps')} label='Extinction substeps'
-      options={_.map(_.range(1, 6), n => ({ text: String(n), value: n }))} placeholder='# subteps'
-      {...props} />
+    <Helper wide content='On top of the extiontion steps of the previous input, the algorithm can also perform a-posteriori
+    calibration at various extinction substeps. This helps to remove any form of bias which might be still left'>
+      <Form.Dropdown selection fluid {...state2.props('extinctionSubsteps')} label='Extinction substeps'
+        options={_.map(_.range(1, 6), n => ({ text: String(n), value: n }))} placeholder='# subteps'
+        {...props} />
+    </Helper>
   );
 });
 
 const ReddeningLaw = observer((props) => {
   return (
-    <Form.Group widths='equal'>
-      {_.map(state2.bands, (name, i) =>
-      (<InputUnit fluid label={<>A<sub>{name}</sub> / A<sub>ref</sub></>}
-        name={'reddeningLaw[' + i + ']'} key={name} state={state2} />))}
-    </Form.Group>
+    <Helper wide='very' position='top center' content='The reddening law for the various bands can be modified, if necessary, 
+    here'>
+      <Form.Group widths='equal'>
+        {_.map(state2.bands, (name, i) =>
+        (<InputUnit fluid label={<>A<sub>{name}</sub> / A<sub>ref</sub></>}
+          name={'reddeningLaw[' + i + ']'} key={name} state={state2} />))}
+      </Form.Group>
+    </Helper>
   )
 });
 
 const ClearButton = observer(() => {
   return (
-    <Button style={{ width: "110px" }} icon={state2.undo ? 'undo' : 'delete'} content={state2.undo ? 'Undo' : 'Clear'}
-      color={state2.undo ? 'green' : 'red'} onClick={state2.resetOrUndo} />
+    <Helper content={state2.undo ? 'Undo the last operation' : 'Cancel all fields and restore default values'}>
+      <Button style={{ width: "110px" }} icon={state2.undo ? 'undo' : 'delete'} content={state2.undo ? 'Undo' : 'Clear'}
+        color={state2.undo ? 'green' : 'red'} onClick={state2.resetOrUndo} />
+    </Helper>
   );
 });
 
@@ -138,15 +156,18 @@ export const MyForm2 = observer((props) => {
     <Container>
       <Form autoComplete='off'>
         <Header as='h2'>Control field</Header>
-            Ideally, the area selected for the control field should be as close as possible
-            to the science field, but with as little as possible extinction.
-            <br />
-            All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
-            , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left
-            using the selection button (the square).
-            <p></p>
-        <Button content='Copy science field area' icon='clone outline' labelPosition='left' basic size='small'
-          onClick={handleCopy} />
+        Ideally, the area selected for the control field should be as close as possible
+        to the science field, but with as little as possible extinction.
+        <br />
+        All coordinates can be entered in the format <i>dd:mm:ss.cc</i>, <i>dd:mm.ccc</i>
+        , or <i>dd.cccc</i>; alternatively, you can specify the area in map to the left
+        using the selection button (the square).
+        <p></p>
+        <Helper wide='very' content='Use this button to copy the entire science field parameters here. This is a quick way to 
+          start the analysis, but is generally not recommended, as the science field is clearly affected by extinction.'>
+          <Button content='Copy science field area' icon='clone outline' labelPosition='left' basic size='small'
+            onClick={handleCopy} />
+        </Helper>
         <Divider hidden />
         <CooForm cooform={state2} />
 
@@ -157,10 +178,18 @@ export const MyForm2 = observer((props) => {
             the selected region and the fraction of the selected stars.
             <p />
         <Form.Group>
-          <InputUnit label='Fraction of area to use' placeholder='Fractional area'
-            name='areaFraction' unit='%' width={8} state={state2} />
-          <InputUnit label='Fraction of stars to use' placeholder='Fractional stars'
-            name='starFraction' unit='%' width={8} state={state2} />
+          <Helper wide content='The algorithm will perform a first extinction map of the control field, and then will select 
+          for the calibration of the science fields only stars in the control field contained in the lower extinction regions.
+          This parameter sets the fraction of the area of the control field to use: for example, 70% will discard the 30%
+          regions in the control field with the largest extinction.'>
+            <InputUnit label='Fraction of area to use' placeholder='Fractional area'
+              name='areaFraction' unit='%' width={8} state={state2} />
+          </Helper>
+          <Helper wide content='The algorithm will only use the specified fraction of control field stars with the lowest star 
+          extinction. For example, entering 70% here will discard the 30% most extinguished stars in the control field.'>
+            <InputUnit label='Fraction of stars to use' placeholder='Fractional stars'
+              name='starFraction' unit='%' width={8} state={state2} />
+          </Helper>
         </Form.Group>
 
         <Header as='h3' dividing>Extreme deconvolution</Header>
@@ -172,8 +201,11 @@ export const MyForm2 = observer((props) => {
             <p />
         <Form.Group>
           <NumComponents width={4} />
-          <InputUnit label='Max extinction' placeholder='max extinction'
-            name='maxExtinction' unit='mag' width={4} state={state2} />
+          <Helper wide content='The maximum extinction to consider in the entire calibration process. Do not exceed here: a very 
+          large extinction would break the algorithm, since no stars would be observable then!'>
+            <InputUnit label='Max extinction' placeholder='max extinction'
+              name='maxExtinction' unit='mag' width={4} state={state2} />
+          </Helper>
           <ExtinctionSteps width={4} />
           <ExtinctionSubsteps width={4} />
         </Form.Group>
@@ -181,12 +213,16 @@ export const MyForm2 = observer((props) => {
         <Header as='h3' dividing>Reddening law</Header>
         <ReddeningLaw reddeningLaw={props.reddeningLaw} />
 
-        <Button style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
-          onClick={handleBack} />
+        <Helper content='Click to go back to the previous page'>
+          <Button style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
+            onClick={handleBack} />
+        </Helper>
         <ClearButton />
-        <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
-          onClick={handleNext} />
-        <Button icon='help' toggle floated='right' />
+        <Helper content='When ready, click to proceed to the next page'>
+          <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
+            onClick={handleNext} />
+        </Helper>
+        <HelperButton />
         <Button icon='download' floated='right' onClick={props.downloader} />
       </Form>
       <FormMessage />

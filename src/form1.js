@@ -6,8 +6,9 @@ import React from 'react'
 import _ from 'lodash'
 import { configure, action } from 'mobx'
 import { observer } from "mobx-react"
-import { Container, Dimmer, Message, Form, Header, Button, Icon, Divider } from 'semantic-ui-react'
+import { Container, Message, Form, Header, Button, Icon, Divider } from 'semantic-ui-react'
 import { CooFormState, CooForm } from './cooform.js'
+import { Helper, HelperButton } from './helper.js';
 
 configure({ enforceActions: 'observed' });
 
@@ -16,8 +17,11 @@ state1.step = 1;
 
 const ClearButton = observer(() => {
   return (
-    <Button style={{ width: "110px" }} icon={state1.undo ? 'undo' : 'delete'} content={state1.undo ? 'Undo' : 'Clear'}
-      color={state1.undo ? 'green' : 'red'} onClick={state1.resetOrUndo} />
+    <Helper
+      content={state1.undo ? 'Undo the last operation' : 'Cancel all fields and restore default values'}>
+      <Button style={{ width: '110px' }} icon={state1.undo ? 'undo' : 'delete'} content={state1.undo ? 'Undo' : 'Clear'}
+        color={state1.undo ? 'green' : 'red'} onClick={state1.resetOrUndo} />
+    </Helper>
   );
 });
 
@@ -50,15 +54,18 @@ export const MyForm1 = observer((props) => {
         <Divider hidden />
         <CooForm cooform={state1} />
         <p></p>
-        <Button style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
-          onClick={handleBack} />
+        <Helper content='Click to go back to the previous page'>
+          <Button style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
+            onClick={handleBack} />
+        </Helper>
         <ClearButton />
-        <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
-          onClick={handleNext} />
-        <Button icon='help' toggle floated='right' />
+        <Helper content='When ready, click to proceed to the next page'>
+          <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
+            onClick={handleNext} />
+        </Helper>
+        <HelperButton />
         <Button icon='download' floated='right' onClick={props.downloader}/>
       </Form>
       <FormMessage />
     </Container>);
 });
-

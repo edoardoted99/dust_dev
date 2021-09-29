@@ -9,7 +9,7 @@ import { observable, computed, configure, action } from 'mobx'
 import { observer } from 'mobx-react'
 import {
   Loader, Dimmer, Form, Header, Button, Accordion, Message,
-  FormField, Input, Label, Popup, Icon, Progress, Dropdown
+  FormField, Input, Label, Icon, Progress, Dropdown
 } from 'semantic-ui-react'
 import { serversDict, datasetsDict, colorDict } from './datasets.js'
 import { FormState } from './formstate.js'
@@ -17,6 +17,8 @@ import { InputUnit } from './inputunit.js'
 import { InputVOField, inputVOValidator } from './inputvofield'
 import { ModalTapSearch } from './modalcat.js'
 import { queryTable, testServerQuery, parseVOTable } from './tap.js'
+import { Helper, HelperButton } from './helper.js'
+
 
 const axios = require('axios').default;
 
@@ -169,8 +171,6 @@ export class Form0State extends FormState {
    */
   @observable catalogProperties = { coords: [], bandlist: [], columns: [], morphclass: '' };
   @observable mocs = [];
-  @observable helper = false;
-
 
   @computed({ keepAlive: true }) get usedBandList() {
     return _.map(this.catalogProperties.bandlist, 1).concat(_.map(this.catalogProperties.bandlist, 2));
@@ -209,8 +209,7 @@ export class Form0State extends FormState {
     queryType: x => false,
     smorphclass: x => false,
     filter: x => false,
-    advFilters: x => false,
-    helper: x => false
+    advFilters: x => false
   }
 
   @computed({ keepAlive: true }) get catalog() {
@@ -532,16 +531,20 @@ const FormQueryType = observer((props) => {
   }
 
   return (
-    <Popup disabled={!state0.helper} content='The query type: standard preset queries or fully custom ones.'
-      trigger={
-        <Form.Group inline>
-          <Form.Radio label='Standard query' name='queryType' value='S'
-            checked={state0.queryType === 'S'} onChange={handleChange} {...props} />
-          <Form.Radio label='Custom query' name='queryType' value='C'
-            checked={state0.queryType === 'C'} onChange={handleChange} {...props} />
+    <Form.Group inline>
+      <Helper content='Select to perform a query on common catalogs'>
+        <Form.Radio label='Standard query' name='queryType' value='S'
+          checked={state0.queryType === 'S'} onChange={handleChange} {...props} />
+      </Helper>
+      <Helper content='General queries on arbitrary catalogs'>
+        <Form.Radio label='Custom query' name='queryType' value='C'
+          checked={state0.queryType === 'C'} onChange={handleChange} {...props} />
+      </Helper>
+      <Helper content='Direct injestion of data from a local file'>
           <Form.Radio label='Local file' name='queryType' value='L'
             checked={state0.queryType === 'L'} onChange={handleChange} {...props} />
-        </Form.Group>} />
+      </Helper>
+    </Form.Group>
   );
 });
 
@@ -555,17 +558,16 @@ const FormCatalog = observer((props) => {
 
   if (state0.queryType === 'S') {
     return (
-      <Popup disabled={!state0.helper} wide content='The catalog to use for the full entire analysis'
-        trigger={<Form.Select fluid width={10} {...state0.props('standardCatalog')} label='Catalog'
-          options={state0.standardCatalogs} placeholder='Catalog' {...props} />} />
+      <Helper wide content='The catalog to use for the entire analysis'>
+        <Form.Select fluid width={10} {...state0.props('standardCatalog')} label='Catalog'
+          options={state0.standardCatalogs} placeholder='Catalog' {...props} />
+      </Helper>
     );
   } else {
     let error = state0.props('customCatalog').error || '';
     return (
-      <Popup disabled={!state0.helper} wide
-        content='The full name of the catalog to use for the full entire analysis (use the button to the right to search)'
-        trigger={
-          <FormField error={Boolean(error)} width={10}>
+      <Helper wide content='The full name of the catalog to use for the entire analysis (use the button to the right to search)'>
+        <FormField error={Boolean(error)} width={10}>
             <label>Catalog</label>
             <Input type='text' {...state0.props('customCatalog')}
               onFocus={() => setCatalog(state0.catalog)}
@@ -578,26 +580,28 @@ const FormCatalog = observer((props) => {
               action={<ModalTapSearch server={state0.server} formServer={FormServer} onClick={modalClick} />}
               placeholder='Catalog full name' />
             {error ? <Label prompt pointing role='alert'>{error}</Label> : <></>}
-          </FormField>} />
+        </FormField>
+      </Helper>
     );
   }
 });
 
 const FormServer = observer((props) => {
   return (
-    <Popup disabled={!state0.helper} content='The astronomical server where the data will be retrieved'
-      trigger={<Form.Select fluid width={6} {...state0.props('server')} label='Server'
-        options={state0.servers} placeholder='Server' {...props} />} />
+    <Helper content='The astronomical server where the data will be retrieved'>
+      <Form.Select fluid width={6} {...state0.props('server')} label='Server'
+        options={state0.servers} placeholder='Server' {...props} />
+    </Helper>
   );
 });
 
 const FormBands = observer((props) => {
   return (
-    <Popup disabled={!state0.helper} wide
-      content='The list of the bands to use for the extinction (make sure you select at least two bands)'
-      trigger={<Form.Dropdown multiple search selection fluid width={10} {...state0.props('bandselection')}
+    <Helper wide content='The list of the bands to use for the extinction (make sure you select at least two bands)'>
+      <Form.Dropdown multiple search selection fluid width={10} {...state0.props('bandselection')}
         label='Bands' options={state0.bands} placeholder='Select bands'
-        renderLabel={option => ({ color: option.color, content: option.text })} {...props} />} />
+        renderLabel={option => ({ color: option.color, content: option.text })} {...props} />
+    </Helper>
   );
 });
 
@@ -612,33 +616,36 @@ const FormAdvCoords = observer((props) => {
   const lineMaker = (filter, idx) => {
     const coords = state0.catalogProperties.coords;
     const line = (
-      <Form.Group key={idx}>
-        <Form.Select fluid width={6} label='Coordinate system'
-          options={[
-            { value: 'E', text: 'Equatorial', disabled: coords.length > 1 && coords[1 - idx] && coords[1 - idx][0] === 'E' },
-            { value: 'G', text: 'Galactic', disabled: coords.length > 1 && coords[1 - idx] && coords[1 - idx][0] === 'G' }]}
-          {...state0.props(`catalogProperties.coords[${idx}][0]`)} placeholder='name' />
-        <InputVOField width={4}
-          label={coords[idx][0] === 'E' ? 'Right ascension' : 'Galactic longitude'}
-          {...state0.props(`catalogProperties.coords[${idx}][1]`)}
-          votable={state0.catalogProperties.columns} catid={state0.catalogProperties.catid}
-          disabledFields={state0.usedBandList} placeholder='column name' />
-        <InputVOField width={4} 
-          label={coords[idx][0] === 'E' ? 'Declination' : 'Galactic latitude'}
-          {...state0.props(`catalogProperties.coords[${idx}][2]`)}
-          votable={state0.catalogProperties.columns} catid={state0.catalogProperties.catid}
-          disabledFields={state0.usedBandList} placeholder='column name' />
-        <Form.Field width={2}>
-          <label>&nbsp;</label>
-          <Button.Group size='mini' basic style={{ marginTop: '4px' }}>
-            <Button icon='minus' disabled={idx === 0 && state0.catalogProperties.coords.length == 1}
-              onClick={action(e => state0.catalogProperties.coords.splice(idx, 1))} />
-            <Button icon='plus' disabled={state0.catalogProperties.coords.length == 2}
-              // @ts-ignore
-              onClick={action(e => state0.catalogProperties.coords.splice(idx + 1, 0, ['', '', '']))} />
-          </Button.Group>
-        </Form.Field>
-      </Form.Group>
+      <Helper key={idx} wide='very' position='top center'
+        content='Specify in this line the database columns associated to the chosen coordinate system'>
+        <Form.Group>
+          <Form.Select fluid width={6} label='Coordinate system'
+            options={[
+              { value: 'E', text: 'Equatorial', disabled: coords.length > 1 && coords[1 - idx] && coords[1 - idx][0] === 'E' },
+              { value: 'G', text: 'Galactic', disabled: coords.length > 1 && coords[1 - idx] && coords[1 - idx][0] === 'G' }]}
+            {...state0.props(`catalogProperties.coords[${idx}][0]`)} placeholder='name' />
+          <InputVOField width={4}
+            label={coords[idx][0] === 'E' ? 'Right ascension' : 'Galactic longitude'}
+            {...state0.props(`catalogProperties.coords[${idx}][1]`)}
+            votable={state0.catalogProperties.columns} catid={state0.catalogProperties.catid}
+            disabledFields={state0.usedBandList} placeholder='column name' />
+          <InputVOField width={4} 
+            label={coords[idx][0] === 'E' ? 'Declination' : 'Galactic latitude'}
+            {...state0.props(`catalogProperties.coords[${idx}][2]`)}
+            votable={state0.catalogProperties.columns} catid={state0.catalogProperties.catid}
+            disabledFields={state0.usedBandList} placeholder='column name' />
+          <Form.Field width={2}>
+            <label>&nbsp;</label>
+            <Button.Group size='mini' basic style={{ marginTop: '4px' }}>
+              <Button icon='minus' disabled={idx === 0 && state0.catalogProperties.coords.length == 1}
+                onClick={action(e => state0.catalogProperties.coords.splice(idx, 1))} />
+              <Button icon='plus' disabled={state0.catalogProperties.coords.length == 2}
+                // @ts-ignore
+                onClick={action(e => state0.catalogProperties.coords.splice(idx + 1, 0, ['', '', '']))} />
+            </Button.Group>
+          </Form.Field>
+        </Form.Group>
+      </Helper>
     );
     return line;
   }
@@ -662,26 +669,38 @@ const FormAdvBands = observer((props) => {
   const lineMaker = (filter, idx) => {
     const line = (
       <Form.Group key={idx}>
-        <Form.Input width={2} type='text' label={idx === 0 ? 'Name' : false}
-          {...state0.props(`catalogProperties.bandlist[${idx}][0]`)} placeholder='name' />
-        <InputVOField width={4} label={idx === 0 ? 'Magnitude' : false}
-          {...state0.props(`catalogProperties.bandlist[${idx}][1]`)}
-          votable={state0.catalogProperties.columns} catid={state0.catalogProperties.catid}
-          disabledFields={state0.usedBandList} placeholder='magnitude' />
-        <InputVOField width={4} label={idx === 0 ? 'Magnitude error' : false}
-          {...state0.props(`catalogProperties.bandlist[${idx}][2]`)}
-          votable={state0.catalogProperties.columns} catid={state0.catalogProperties.catid}
-          disabledFields={state0.usedBandList} placeholder='magnitude error' />
-        <Form.Input width={4} label={idx === 0 ? (<label>A<sub>mag</sub> / A<sub>ref</sub></label>) : false}
-          {...state0.props(`catalogProperties.bandlist[${idx}][3]`)} placeholder='reddening law' type='text'
-          action={{
-            icon: 'magic', basic: true,
-            onClick: action(() => {
-              let name = state0.catalogProperties.bandlist[idx][0];
-              if (name in RIEKE_LEBOVSKY_REDDENING) 
-                state0.catalogProperties.bandlist[idx][3] = RIEKE_LEBOVSKY_REDDENING[name];
-            })
-          }} />
+        <Helper wide content='A mnemonic associated to the band (you can choose just the band name)'>
+          <Form.Input width={2} type='text' label={idx === 0 ? 'Name' : false}
+            {...state0.props(`catalogProperties.bandlist[${idx}][0]`)} placeholder='name' />
+        </Helper>
+        <Helper wide content='The name of the database column storing the band magnitude 
+        (use the button to the right to easily select a database column)'>
+          <InputVOField width={4} label={idx === 0 ? 'Magnitude' : false}
+            {...state0.props(`catalogProperties.bandlist[${idx}][1]`)}
+            votable={state0.catalogProperties.columns} catid={state0.catalogProperties.catid}
+            disabledFields={state0.usedBandList} placeholder='magnitude' />
+        </Helper>
+        <Helper wide content='The name of the database column storing the band magnitude error 
+        (use the button to the right to easily select a database column)'>
+          <InputVOField width={4} label={idx === 0 ? 'Magnitude error' : false}
+            {...state0.props(`catalogProperties.bandlist[${idx}][2]`)}
+            votable={state0.catalogProperties.columns} catid={state0.catalogProperties.catid}
+            disabledFields={state0.usedBandList} placeholder='magnitude error' />
+        </Helper>
+        <Helper wide content='The band reddening law, expressed in terms of extinction ratio with 
+          a chosen reference magnitude (for example V or K band). The button to the right will try 
+          to guess the reddening law from the band name, using a standard law.'>
+          <Form.Input width={4} label={idx === 0 ? (<label>A<sub>mag</sub> / A<sub>ref</sub></label>) : false}
+            {...state0.props(`catalogProperties.bandlist[${idx}][3]`)} placeholder='reddening law' type='text'
+            action={{
+              icon: 'magic', basic: true,
+              onClick: action(() => {
+                let name = state0.catalogProperties.bandlist[idx][0];
+                if (name in RIEKE_LEBOVSKY_REDDENING) 
+                  state0.catalogProperties.bandlist[idx][3] = RIEKE_LEBOVSKY_REDDENING[name];
+              })
+            }} />
+        </Helper>
         <Form.Field width={2}>
           {idx === 0 ? <label>&nbsp;</label> : ''}
           <Button.Group size='mini' basic style={{ marginTop: '4px' }}>
@@ -703,10 +722,13 @@ const FormAdvBands = observer((props) => {
       { _.map(state0.catalogProperties.bandlist, lineMaker)}
       <Header as='h4'>Morphological class selection</Header>
       <Form.Group>
-        <InputVOField width={6} label='Morphological class (optional)' disabledFields={state0.usedBandList}
-          placeholder='Morphological class' {...state0.props(`catalogProperties.morphclass`)}
-          votable={state0.catalogProperties.columns} catid={state0.catalogProperties.catid}
-        />
+        <Helper wide content='The database column associated to a morphological classification, if any. 
+          The column should report a probability that the object belongs to a given class (for example, is a 
+          star)'>
+          <InputVOField width={6} label='Morphological class (optional)' disabledFields={state0.usedBandList}
+            placeholder='Morphological class' {...state0.props(`catalogProperties.morphclass`)}
+            votable={state0.catalogProperties.columns} catid={state0.catalogProperties.catid} />
+        </Helper>
       </Form.Group>
     </>
   );
@@ -715,23 +737,29 @@ const FormAdvBands = observer((props) => {
 
 const FormMorhClass = observer((props) => {
   return (
-    <Form.Dropdown fluid width={6} search selection clearable {...state0.props('morphclass')}
-      label='Morphological classification' options={state0.morphclasses} placeholder='No classification'
-      {...props} />
+    <Helper wide content='If the database contains columns associated to a morphological classiciation, 
+      you can select the associated column here'>
+      <Form.Dropdown fluid width={6} search selection clearable {...state0.props('morphclass')}
+        label='Morphological classification' options={state0.morphclasses} placeholder='No classification'
+        {...props} />
+    </Helper>
   );
 });
 
 const FormFilter = observer((props) => {
   return (
     <>
-      <Form.Group inline>
-        <Form.Radio label='No filter' name='filter' value='N'
-          checked={state0.filter === 'N'} onChange={state0.handleChange} {...props} />
-        <Form.Radio label='Remove purious sources' name='filter' value='S'
-          checked={state0.filter === 'S'} onChange={state0.handleChange} disabled={state0.filterDisabled} {...props} />
-        <Form.Radio label='Custom filter' name='filter' value='C'
-          checked={state0.filter === 'C'} onChange={state0.handleChange} {...props} />
-      </Form.Group>
+      <Helper wide='very' content='Optionally, one can filter out likely spurious sources (using a preset
+      combination of flags, only available for standard queries) or even use custom constraints'>
+        <Form.Group inline>
+          <Form.Radio label='No filter' name='filter' value='N'
+            checked={state0.filter === 'N'} onChange={state0.handleChange} {...props} />
+          <Form.Radio label='Remove purious sources' name='filter' value='S'
+            checked={state0.filter === 'S'} onChange={state0.handleChange} disabled={state0.filterDisabled} {...props} />
+          <Form.Radio label='Custom filter' name='filter' value='C'
+            checked={state0.filter === 'C'} onChange={state0.handleChange} {...props} />
+        </Form.Group>
+      </Helper>
       { state0.filter === 'C' ? <FormAdvFilters {...props} /> : <></>}
     </>
   );
@@ -752,17 +780,23 @@ const FormAdvFilters = observer((props) => {
         state0.advFilters[idx].max.trim() !== '');
     const line = (
       <Form.Group key={`advFilter${idx}`}>
-        <InputVOField width={6} {...state0.props(`advFilters[${idx}].name`)} votable={state0.catalogProperties.columns}
-          missingMessage='warn' catid={state0.catalogProperties.catid} disabledFields={state0.usedFilterList} /> 
+        <Helper content='The name of a database column to use in the custom constrain'>
+          <InputVOField width={6} {...state0.props(`advFilters[${idx}].name`)} votable={state0.catalogProperties.columns}
+            missingMessage='warn' catid={state0.catalogProperties.catid} disabledFields={state0.usedFilterList} /> 
+        </Helper>
        {name === '' ?
           <></> :
           <>
-            <InputUnit fluid width={doubleEntry ? 4 : 8} name={`advFilters[${idx}].min`}
-              placeholder={doubleEntry ? '> min value' : 'condition'}
-              unit={units[name]} state={state0} />
-            {doubleEntry ?
-              <InputUnit fluid width={4} name={`advFilters[${idx}].max`} placeholder='< max value'
+            <Helper content='The full condition to use, including any needed operator'>
+              <InputUnit fluid width={doubleEntry ? 4 : 8} name={`advFilters[${idx}].min`}
+                placeholder={doubleEntry ? '> min value' : 'condition'}
                 unit={units[name]} state={state0} />
+            </Helper>
+            {doubleEntry ?
+              <Helper content='The maximum value, including the < or <= operator'>
+                <InputUnit fluid width={4} name={`advFilters[${idx}].max`} placeholder='< max value'
+                  unit={units[name]} state={state0} />
+              </Helper>
               : <></>
             }
           </>
@@ -792,17 +826,21 @@ const SQLArea = observer(() => {
   const [active, setActive] = React.useState(false);
 
   return (
-    <Accordion fluid styled>
-      <Accordion.Title content='ADQL query' active={active} icon='dropdown' onClick={() => setActive(!active)} />
-      <Accordion.Content active={active} content={state0.adql} />
-    </Accordion>
+    <Helper wide='very' content='The panel shows the built ADQL query so far; coordinate constraints will be added later'>
+      <Accordion fluid styled>
+        <Accordion.Title content='ADQL query' active={active} icon='dropdown' onClick={() => setActive(!active)} />
+        <Accordion.Content active={active} content={state0.adql} />
+      </Accordion>
+    </Helper>
   );
 });
 
 const ClearButton = observer((props) => {
   return (
-    <Button style={{ width: "110px" }} icon={state0.undo ? 'undo' : 'delete'} content={state0.undo ? 'Undo' : 'Clear'}
-      color={state0.undo ? 'green' : 'red'} onClick={state0.resetOrUndo} {...props} />
+    <Helper content={state0.undo ? 'Undo the last operation' : 'Cancel all fields and restore default values'}>
+      <Button style={{ width: "110px" }} icon={state0.undo ? 'undo' : 'delete'} content={state0.undo ? 'Undo' : 'Clear'}
+        color={state0.undo ? 'green' : 'red'} onClick={state0.resetOrUndo} {...props} />
+    </Helper>
   );
 });
 
@@ -861,20 +899,29 @@ const FormCustomConfiguration = observer((props) => {
   // state0.errors = errors;
   return (
     <Form.Input label='Custom configuration' fluid type='text' action actionPosition='left' icon>
-      <Dropdown placeholder='Saved or new configuration name' options={options}
-        search selection allowAdditions fluid {...state0.props('currentConfiguration')}
-        onAddItem={onAddItem} additionLabel='Add new configuration '/>
-      <Button icon disabled={!present}
-        onClick={onUpdateFields}>
-        <Icon color='green' name='sign-out' rotated='counterclockwise'/>
-      </Button>
-      <Button icon disabled={!present} onClick={onCancelItem}>
-        <Icon color='red' name='cancel' />
-      </Button>
-      <Button icon disabled={!present}
-        style={{ borderRadius: '0 4px 4px 0' }} onClick={onUpdateItem}>
-        <Icon color='green' name='sign-in' rotated='clockwise'/>
-      </Button>
+      <Helper wide='very' content='Use this dropdown, together with the buttons to the right, 
+      to save a given custom configuration or to restore a saved one'>
+        <Dropdown placeholder='Saved or new configuration name' options={options}
+          search selection allowAdditions fluid {...state0.props('currentConfiguration')}
+          onAddItem={onAddItem} additionLabel='Add new configuration '/>
+      </Helper>
+      <Helper content='Restore (pull-back) a saved configuration'>
+        <Button icon disabled={!present}
+          onClick={onUpdateFields}>
+          <Icon color='green' name='sign-out' rotated='counterclockwise'/>
+        </Button>
+      </Helper>
+      <Helper content='Cancel a saved configuration'>
+        <Button icon disabled={!present} onClick={onCancelItem}>
+          <Icon color='red' name='cancel' />
+        </Button>
+      </Helper>
+      <Helper content='Save (push-down) the current setup in a configuration'>
+        <Button icon disabled={!present}
+          style={{ borderRadius: '0 4px 4px 0' }} onClick={onUpdateItem}>
+          <Icon color='green' name='sign-in' rotated='clockwise'/>
+        </Button>
+      </Helper>
     </Form.Input>
   );
 });
@@ -953,9 +1000,12 @@ const UploadButton = observer((props) => {
       {state0.localfile == null ?
         <>
           <FormField error={Boolean(error)}>
-            <Button fluid onDragEnter={() => setDragging(true)} onDragLeave={() => setDragging(false)}
-              onDragOver={(e) => e.preventDefault()} onDrop={dropHandler}
+            <Helper wide='very' content='Press to upload a local file, or drag here a local file. 
+            Recognized formats include FITS files, HDF5 files, and VO tables.'>
+              <Button fluid onDragEnter={() => setDragging(true)} onDragLeave={() => setDragging(false)}
+                onDragOver={(e) => e.preventDefault()} onDrop={dropHandler}
               as='label' htmlFor='dataUpload' icon='upload' content='Data upload' color={dragging ? 'yellow' : null} />
+            </Helper>
             {(error) ?
               <Label prompt pointing role='alert'>{error}</Label>
               : <></>
@@ -1069,12 +1119,16 @@ export const MyForm0 = observer((props) => {
         <Form.Field>
           <SQLArea />
         </Form.Field>
-
-        <Button icon='phone' content='Check' onClick={checkServer} disabled={state0.queryType === 'L'} />
-        <ClearButton data-tooltip={!state0.helper ? null : 'Click to reset all fields'} />
-        <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
-          disabled={state0.messageType !== null && state0.messageType !== 'success'} onClick={handleNext} />
-        <Button icon='help' toggle active={state0.helper} onClick={action(() => state0.helper = !state0.helper)} floated='right' />
+        
+        <Helper content='Click to check the availability of the selected server'>
+          <Button icon='phone' content='Check' onClick={checkServer} disabled={state0.queryType === 'L'} />
+        </Helper>
+        <ClearButton />
+        <Helper content='When ready, click to proceed to the next page'>
+          <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
+            disabled={state0.messageType !== null && state0.messageType !== 'success'} onClick={handleNext} />
+        </Helper>
+        <HelperButton />
         <Button as='label' htmlFor='file' icon='upload' floated='right' />
         <input type='file' id='file' hidden onChange={props.uploader} />
       </Form>

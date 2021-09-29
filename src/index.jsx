@@ -8,6 +8,7 @@ import { observer } from 'mobx-react';
 
 import 'semantic-ui-css/semantic.min.css'
 import { Step, Grid, Container } from 'semantic-ui-react'
+
 import _ from 'lodash'
 import { MyForm0, state0 } from './form0.js'
 import { MyForm1, state1 } from './form1.js'
@@ -39,6 +40,7 @@ export function MyApp(props)
         console.log(error);
       }));
   };
+
   useEffect(() => {
     const reactions = [];
     for (let n of [0, 1, 2, 3]) {
@@ -77,6 +79,11 @@ export function MyApp(props)
     state2.bands = _.cloneDeep(state0.bandlist);
     state2._orig.reddeningLaw = _.cloneDeep(state0.reddeningLaw);
     state2._orig.bands = _.cloneDeep(state0.bandlist);
+    // Loading JS9 if necessary
+    let js9 = document.createElement("script");
+    js9.type = "application/javascript";
+    js9.src = "https://js9.si.edu/js9/js9-allinone.js";
+    document.body.appendChild(js9);
     setCompleted(0);
     setStep(1);
   });

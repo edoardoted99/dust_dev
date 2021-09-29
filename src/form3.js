@@ -12,6 +12,7 @@ import { InputUnit } from './inputunit.js'
 import { FormState } from './formstate.js'
 import { Slider } from './slider.js'
 import { Angle } from './angle.js';
+import { Helper, HelperButton } from './helper.js';
 import { sphereBox, sphereBoxCorners, sphereCircle } from './spherical.js'
 import { galactic2equatorial, equatorial2galactic } from './coordinates.js'
 import { WCS } from './wcs.js'
@@ -349,9 +350,11 @@ const FormProducts = observer((props) => {
     { text: 'Star density', value: 'Star density', color: 'grey' }
   ];
   return (
-    <Form.Dropdown multiple search selection fluid width={16} {...state3.props('products')}
-      options={options} placeholder='Select products'
-      renderLabel={option => ({ color: option.color, content: option.text })} {...props} />
+    <Helper wide='very' content='Select the list of products you want to have from the pipeline'>
+      <Form.Dropdown multiple search selection fluid width={16} {...state3.props('products')}
+        options={options} placeholder='Select products'
+        renderLabel={option => ({ color: option.color, content: option.text })} {...props} />
+    </Helper>
   );
 });
 
@@ -361,20 +364,27 @@ const FormDensity = observer(() => {
   });
 
   return (
-    <Form.Field width={8}>
-      <div>
-        Target density: {state3.starsPerPixel.toFixed(1)} stars/px
-        <Slider min={0} max={20} value={state3.starsPerPixel} onChange={handleClick}
-          size='tiny' color={state3.starsPerPixel < 20 ? 'blue' : 'red'} />
-      </div>
-    </Form.Field>
+    <Helper wide content='The estimated average object density in the science field, in stars per pixel. 
+      The density is influenced by the pixel scale; vice-versa, one can change directly the density (and thus
+      the pixel scale) by clicking on this slider.'>
+      <Form.Field width={8}>
+        <div>
+          Target density: {state3.starsPerPixel.toFixed(1)} stars/px
+          <Slider min={0} max={20} value={state3.starsPerPixel} onChange={handleClick}
+            size='tiny' color={state3.starsPerPixel < 20 ? 'blue' : 'red'} />
+        </div>
+      </Form.Field>
+    </Helper>
   )
 });
 
 const FormProjection = observer((props) => {
   return (
-    <Form.Dropdown selection search fluid width={4} {...state3.props('projection')}
-      label='Projection' options={projectionTypes} placeholder='projection' {...props} />
+    <Helper wide content='Select the projection type here. Note that some projections require that additional
+    parameters (PVs) are specified below.'>
+      <Form.Dropdown selection search fluid width={4} {...state3.props('projection')}
+        label='Projection' options={projectionTypes} placeholder='projection' {...props} />
+    </Helper>
   );
 });
   
@@ -384,8 +394,10 @@ const FormCoosys = observer((props) => {
     { value: 'equatorial', text: 'Equatorial coordinates' }
   ]
   return (
-    <Form.Dropdown selection fluid width={4} {...state3.props('coosys')}
-      label='Coordinate system' options={options} placeholder='coordinate system' {...props} />
+    <Helper wide content='Specify the coordinate system of the maps'>
+      <Form.Dropdown selection fluid width={4} {...state3.props('coosys')}
+        label='Coordinate system' options={options} placeholder='coordinate system' {...props} />
+    </Helper>
   );
 });
 
@@ -417,23 +429,28 @@ const FormScale = observer((props) => {
     if (state3.scaleLoocked) state3.starsPerPixel = state3.starsPerPixel;
   });
   return (
-    <FormField error={Boolean(error)} width={props.width}>
-      <label>Pixel scale</label>
-      <Input name={name} value={value} placeholder='scale' action iconPosition='left'
-        onChange={onChange} onFocus={handleFocus} onBlur={handleBlur} >
-        <Icon name={state3.scaleLoocked ? 'lock' : 'lock open'} link onClick={toggleLock} />
-        <input />
-        {error ? <Label prompt pointing role='alert'>{error}</Label> : <></>}
-        <Select compact options={options} {..._.omit(state3.props('scaleUnit'), ['error'])} />
-      </Input>
-    </FormField>);
+    <Helper wide content='The pixel scale. The unit of the scale can be changed with the dropdown menu. 
+      Only round pixels scales are allowed when the lock is closed.'>
+      <FormField error={Boolean(error)} width={props.width}>
+        <label>Pixel scale</label>
+        <Input name={name} value={value} placeholder='scale' action iconPosition='left'
+          onChange={onChange} onFocus={handleFocus} onBlur={handleBlur} >
+          <Icon name={state3.scaleLoocked ? 'lock' : 'lock open'} link onClick={toggleLock} />
+          <input />
+          {error ? <Label prompt pointing role='alert'>{error}</Label> : <></>}
+          <Select compact options={options} {..._.omit(state3.props('scaleUnit'), ['error'])} />
+        </Input>
+      </FormField>
+    </Helper>);
 });
 
 const FormIterations = observer((props) => {
   const options = _.map(_.range(1,6), n => ({ text: n, value: n, key: n }))
   return (
-    <Form.Dropdown selection fluid width={4} {...state3.props('clipIters')}
-      label='Iterations' options={options} placeholder='# iterations' {...props} />
+    <Helper content='The number of iteration in the sigma-clipping algorithm'>
+      <Form.Dropdown selection fluid width={4} {...state3.props('clipIters')}
+        label='Iterations' options={options} placeholder='# iterations' {...props} />
+    </Helper>
   );
 })
 
@@ -455,8 +472,10 @@ const ClearButton = observer(() => {
     if (state3.undo) state3.setDefault();
   }
   return (
-    <Button style={{ width: "110px" }} icon={state3.undo ? 'undo' : 'delete'} content={state3.undo ? 'Undo' : 'Clear'}
-      color={state3.undo ? 'green' : 'red'} onClick={handleClick} />
+    <Helper content={state3.undo ? 'Undo the last operation' : 'Cancel all fields and restore default values'}>
+      <Button style={{ width: "110px" }} icon={state3.undo ? 'undo' : 'delete'} content={state3.undo ? 'Undo' : 'Clear'}
+        color={state3.undo ? 'green' : 'red'} onClick={handleClick} />
+    </Helper>
   );
 });
 
@@ -571,34 +590,37 @@ export const FormSVG = observer((props) => {
   const cone = state3.state1.shape === 'C';
   const border = cone ? circle(wcs, lonCtr, latCtr, radius) : box(wcs, lonCtr, latCtr, lonWidth, latWidth);
   const result = (
-    <svg height='400' width='400' viewBox={`${-b} ${-b} ${n1 + 2 * b} ${n2 + 2 * b}`}
-      preserveAspectRatio='xMinYMin meet'>
-      <defs>
-        <clipPath id='paper'>
-          <path d={`M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`} />
-        </clipPath>
-        <clipPath id='fov'>
-          <path d={border} />
-        </clipPath>
-      </defs>
-      <g clipPath='url(#paper)' transform={`scale(1, -1) translate(0, -${n2})`}>
-        <g clipPath='url(#fov)'>
-          {_.times(nx + 1, (n) =>
-            <path d={'M ' + line(wcs, lonMin + lonStep * n, lonMin + lonStep * n, latMin, latMax)}
-              fill='none' stroke='grey' strokeWidth='1' vectorEffect='non-scaling-stroke' key={`x${n}`} />)}
-          {_.times(ny + 1, (n) =>
-            <path d={'M ' + line(wcs, lonMin, lonMax, latMin + latStep * n, latMin + latStep * n)}
-              fill='none' stroke='grey' strokeWidth='1' vectorEffect='non-scaling-stroke' key={`y${n}`} />)}
+    <Helper wide content='The figure shows the shape of the final FITS images (red rectangle), 
+      together with the selected sky area, projected according to the parameters set in this page (black lines)'>
+      <svg height='400' width='400' viewBox={`${-b} ${-b} ${n1 + 2 * b} ${n2 + 2 * b}`}
+        preserveAspectRatio='xMinYMin meet'>
+        <defs>
+          <clipPath id='paper'>
+            <path d={`M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`} />
+          </clipPath>
+          <clipPath id='fov'>
+            <path d={border} />
+          </clipPath>
+        </defs>
+        <g clipPath='url(#paper)' transform={`scale(1, -1) translate(0, -${n2})`}>
+          <g clipPath='url(#fov)'>
+            {_.times(nx + 1, (n) =>
+              <path d={'M ' + line(wcs, lonMin + lonStep * n, lonMin + lonStep * n, latMin, latMax)}
+                fill='none' stroke='grey' strokeWidth='1' vectorEffect='non-scaling-stroke' key={`x${n}`} />)}
+            {_.times(ny + 1, (n) =>
+              <path d={'M ' + line(wcs, lonMin, lonMax, latMin + latStep * n, latMin + latStep * n)}
+                fill='none' stroke='grey' strokeWidth='1' vectorEffect='non-scaling-stroke' key={`y${n}`} />)}
+          </g>
+          <path d={border} fill='none' stroke='black' strokeWidth='2' vectorEffect='non-scaling-stroke' key='C' />
+          <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`}
+            fill='red' stroke='none' fillOpacity='0.5' vectorEffect='non-scaling-stroke' key='F1' />
+          <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`}
+            fill='white' stroke='none' fillOpacity='0.8' vectorEffect='non-scaling-stroke' key='F2' />
+          <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z`} fill='none' stroke='red' strokeWidth={1}
+            vectorEffect='non-scaling-stroke' key='F3' />
         </g>
-        <path d={border} fill='none' stroke='black' strokeWidth='2' vectorEffect='non-scaling-stroke' key='C' />
-        <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`}
-          fill='red' stroke='none' fillOpacity='0.5' vectorEffect='non-scaling-stroke' key='F1' />
-        <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z M ${-b},${-b} L ${-b},${n2 + b} L ${n1 + b},${n2 + b} L ${n1 + b},${-b} Z`}
-          fill='white' stroke='none' fillOpacity='0.8' vectorEffect='non-scaling-stroke' key='F2' />
-        <path d={`M 0,0 L ${n1},0 L ${n1},${n2} L 0,${n2} Z`} fill='none' stroke='red' strokeWidth={1}
-          vectorEffect='non-scaling-stroke' key='F3' />
-      </g>
-    </svg>
+      </svg>
+    </Helper>
   );
   wcs.free();
   return result;
@@ -653,7 +675,9 @@ export function MyForm3(props) {
     const label = `${labels[state3.coosys][props.type]} of reference pixel`;
     const name = props.name;
     return (
-      <InputAngle {...state3.props(props.name)} label={label} {...props} />
+      <Helper wide content={'The' + label.toLowerCase() + '; use the globe to the right to transform the input format'}>
+        <InputAngle {...state3.props(props.name)} label={label} {...props} />
+      </Helper>
     );
   });
 
@@ -672,25 +696,36 @@ export function MyForm3(props) {
           <Header as='h3' dividing>Map parameters</Header>
 
           <Form.Group>
-            <Form.Field width={8}>
-              <Button content='Guess parameters' icon='magic' labelPosition='left' basic size='small'
-                onClick={handleMagic} />
-            </Form.Field>
+            <Helper wide content='Click to guess the projection parameters so that the science field is entirely within the 
+              FITS area'>
+              <Form.Field width={8}>
+                <Button content='Guess parameters' icon='magic' labelPosition='left' basic size='small'
+                  onClick={handleMagic} />
+              </Form.Field>
+            </Helper>
             <FormDensity />
           </Form.Group>
           <Header as='h4' dividing>Image coordinate system</Header>
           <Form.Group>
-            <InputUnit label='Image width' placeholder='naxis1'
-              name='naxis1' unit='px' width={8} state={state3} />
-            <InputUnit label='Image height' placeholder='naxis2'
-              name='naxis2' unit='px' width={8} state={state3} />
+            <Helper content='Image width, in pixels'>
+              <InputUnit label='Image width' placeholder='naxis1'
+                name='naxis1' unit='px' width={8} state={state3} />
+            </Helper>
+            <Helper content='Image height, in pixels'>
+              <InputUnit label='Image height' placeholder='naxis2'
+                name='naxis2' unit='px' width={8} state={state3} />
+            </Helper>
           </Form.Group>
 
           <Form.Group>
-            <InputUnit label='X of reference pixel' placeholder='crpix1'
-              name='crpix1' unit='px' width={8} state={state3} />
-            <InputUnit label='Y of reference pixel' placeholder='crpix2'
-              name='crpix2' unit='px' width={8} state={state3} />
+            <Helper wide content='X coordinate of the reference pixel: it is often taken to be at the center of the image'>
+              <InputUnit label='X of reference pixel' placeholder='crpix1'
+                name='crpix1' unit='px' width={8} state={state3} />
+            </Helper>
+            <Helper wide content='Y coordinate of the reference pixel: it is often taken to be at the center of the image'>
+              <InputUnit label='Y of reference pixel' placeholder='crpix2'
+                name='crpix2' unit='px' width={8} state={state3} />
+            </Helper>
           </Form.Group>
           <Form.Group>
             <FormAngle width={8} placeholder='crval1' name='crval1' type='longitude' />
@@ -702,8 +737,10 @@ export function MyForm3(props) {
           </Form.Group>
           <Form.Group>
             <FormScale width={8} />
-            <InputUnit label='Rotation angle' placeholder='rot'
-              name='crota2' unit='°' width={8} state={state3} />
+            <Helper wide content='The rotation of the projection with respect to the coordinate axes'>
+              <InputUnit label='Rotation angle' placeholder='rot'
+                name='crota2' unit='°' width={8} state={state3} />
+            </Helper>
           </Form.Group>
 
           <Accordion as='h4'>
@@ -713,36 +750,52 @@ export function MyForm3(props) {
                   </Header>
             </Accordion.Title>
             <Accordion.Content active={advanced} >
-              <Form.Group>
-                <InputUnit label='Native longitude of celestial pole' placeholder='lonpole'
-                  name='lonpole' unit='°' width={8} state={state3} />
-                <InputUnit label='Native latitude of celestial pole' placeholder='latpole'
-                  name='latpole' unit='°' width={8} state={state3} />
-              </Form.Group>
-              <Form.Group>
-                <FormPV n={0} />
-                <FormPV n={1} />
-                <FormPV n={2} />
-                <FormPV n={3} />
-              </Form.Group>
+              <Helper wide='very' position='top center' content='Advanced projection parameters, generally 
+                needed only for specific projections'>
+                <Form.Group>
+                  <InputUnit label='Native longitude of celestial pole' placeholder='lonpole'
+                    name='lonpole' unit='°' width={8} state={state3} />
+                  <InputUnit label='Native latitude of celestial pole' placeholder='latpole'
+                    name='latpole' unit='°' width={8} state={state3} />
+                </Form.Group>
+              </Helper>
+              <Helper wide='very' position='top center' content='Advanced projection parameters, generally 
+                needed only for specific projections'>
+                <Form.Group>
+                  <FormPV n={0} />
+                  <FormPV n={1} />
+                  <FormPV n={2} />
+                  <FormPV n={3} />
+                </Form.Group>
+              </Helper>
             </Accordion.Content>
           </Accordion>
 
           <Header as='h4' dividing>Smoothing algorithm</Header>
           <Form.Group>
-            <InputUnit label='Smoothing FWHM' placeholder='resolution'
-              name='smoothpar' unit='px' width={8} state={state3} />
-            <InputUnit label='Clipping' placeholder='clipping'
-              name='clipping' unit='σ' width={4} state={state3} />
+            <Helper wide content="The width (in pixels) of the smoothing kernel. A value of 2 pixels satisfies 
+              Nyquist's criterium.">
+              <InputUnit label='Smoothing FWHM' placeholder='resolution'
+                name='smoothpar' unit='px' width={8} state={state3} />
+            </Helper>
+            <Helper wide content='Stars whose extinctions differ from the average local extinction by more than 
+            the entered sigma values are discarded; useful to filter out outlier objects such as foreground stars'>
+              <InputUnit label='Clipping' placeholder='clipping'
+                name='clipping' unit='σ' width={4} state={state3} />
+            </Helper>
             <FormIterations />
           </Form.Group>
 
-          <Button style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
-            onClick={handleBack} />
+          <Helper content='Click to go back to the previous page'>
+            <Button style={{ width: "110px" }} icon='left arrow' labelPosition='left' content='Back'
+              onClick={handleBack} />
+          </Helper>
           <ClearButton />
-          <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
-            onClick={handleNext} disabled={state3.state1.job_urls.length == 0 || state3.state2.job_urls.length == 0} />
-          <Button icon='help' toggle floated='right' />
+          <Helper content='When ready, click to start the pipeline!'>
+            <Button primary style={{ width: "110px" }} icon='right arrow' labelPosition='right' content='Next'
+              onClick={handleNext} disabled={state3.state1.job_urls.length == 0 || state3.state2.job_urls.length == 0} />
+          </Helper>
+          <HelperButton />
           <Button icon='download' floated='right' onClick={props.downloader} />
         </Form>
         <FormMessage />
