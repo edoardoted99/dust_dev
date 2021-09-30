@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-"""Python server"""
+"""Python server."""
 
 from typing import Any, Optional, Union, Tuple, Sequence, cast, TYPE_CHECKING
 import logging
@@ -216,7 +216,7 @@ def query_region_async(self, coordinates, radius=None, inner_radius=None,
 
 
 # Development mode: influence the directories used
-DEVEL = True
+DEVEL = False
 
 # Cache: It true, locally saves results of old queries to speed new computations
 USE_CACHE = True
