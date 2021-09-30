@@ -1129,7 +1129,10 @@ export const MyForm0 = observer((props) => {
             disabled={state0.messageType !== null && state0.messageType !== 'success'} onClick={handleNext} />
         </Helper>
         <HelperButton transition />
-        <Button as='label' htmlFor='file' icon='upload' floated='right' />
+        <Helper wide position='top right' content='Upload a previously saved configuration file:
+        this will help you re-perform a specific analysis without the need of re-entering all parameters'>
+          <Button as='label' htmlFor='file' icon='upload' floated='right' />
+        </Helper>
         <input type='file' id='file' hidden onChange={props.uploader} />
       </Form>
       <FormMessage />

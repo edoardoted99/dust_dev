@@ -223,7 +223,10 @@ export const MyForm2 = observer((props) => {
             onClick={handleNext} />
         </Helper>
         <HelperButton />
-        <Button icon='download' floated='right' onClick={props.downloader} />
+        <Helper wide position='top right' content='Download the a (partial) configuration:
+          the file can then be used on the first page to restore the parameters entered so far'>
+          <Button icon='download' floated='right' onClick={props.downloader} />
+        </Helper>
       </Form>
       <FormMessage />
     </Container>);

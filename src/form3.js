@@ -796,7 +796,10 @@ export function MyForm3(props) {
               onClick={handleNext} disabled={state3.state1.job_urls.length == 0 || state3.state2.job_urls.length == 0} />
           </Helper>
           <HelperButton />
-          <Button icon='download' floated='right' onClick={props.downloader} />
+          <Helper wide position='top right' content='Download the full configuration:
+            the file can then be used on the first page to restore all pipeline parameters'>
+            <Button icon='download' floated='right' onClick={props.downloader} />
+          </Helper>
         </Form>
         <FormMessage />
       </Dimmer.Dimmable>

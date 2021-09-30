@@ -120,22 +120,10 @@ export function MyApp(props)
     reader.onload = action((e) => {
       // @ts-ignore
       const data = JSON.parse(e.target.result);
-      if (data.length > 0) {
-        state0.push(data[0]);
-        saveStep0();
-      }
-      if (data.length > 1) {
-        state1.push(data[1]);
-        saveStep1();
-      }
-      if (data.length > 2) {
-        state2.push(data[2]);
-        saveStep2();
-      }
-      if (data.length > 3) {
-        state3.push(data[3]);
-        saveStep3();
-      }
+      if (data.length > 0) state0.push(data[0]);
+      if (data.length > 1) state1.push(data[1]);
+      if (data.length > 2) state2.push(data[2]);
+      if (data.length > 3) state3.push(data[3]);
     });
     reader.readAsText(file);
   };
@@ -187,7 +175,7 @@ export function MyApp(props)
 
   switch (step) {
     case 0:
-      form = (<MyForm0 onNext={saveStep0} />);
+      form = (<MyForm0 onNext={saveStep0} uploader={uploader} />);
       break;
     case 1:
       form = (<MyForm1 onNext={saveStep1} onBack={() => setStep(0)} adqlComponents={state0.adqlComponents}
