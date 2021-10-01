@@ -1,5 +1,7 @@
 # HOW TO SETUP EVERYTHING
 
+## Yarn and parcel configuration
+
 The initial `parcel` configuration can be carried out using the following steps:
 
 1. `yarn add -D parcel@next`
@@ -10,13 +12,15 @@ The initial `parcel` configuration can be carried out using the following steps:
     - `yarn add semantic-ui-react`
     - `yarn add mobx`
     - `yarn add mobx-react`
+    - `yarn add axis`
+    - `yarn add jsvotable`
 4. Create a `.babelrc` package with the lines reported below
 5. Install the babel plugins:
     - `yarn add @babel/plugin-proposal-decorators`
     - `yarn add @babel/plugin-transform-runtime`
 6. Edit the `package.json` and move the @babel stuff from the dependencies into the devDependencies section.
 
-## The final `package.json` file
+### The final `package.json` file
 
 ````[json]
 {
@@ -37,6 +41,8 @@ The initial `parcel` configuration can be carried out using the following steps:
   "dependencies": {
     "@babel/plugin-proposal-decorators": "^7.10.5",
     "@babel/plugin-transform-runtime": "^7.11.5",
+    "axios": "^0.20.0",
+    "jsvotable": "^2.0.2",
     "mobx": "^5.15.7",
     "mobx-react": "^6.3.0",
     "react": "^16.13.1",
@@ -50,7 +56,7 @@ The initial `parcel` configuration can be carried out using the following steps:
 }
 ````
 
-## The final `.babelrc` file
+### The final `.babelrc` file
 
 ````[conf]
 {
@@ -63,3 +69,16 @@ The initial `parcel` configuration can be carried out using the following steps:
   ]
 }
 ````
+
+## Python configuration
+
+We assume here a standard Anaconda Python 3 package has been already installed.
+You then need to perform the following addition steps:
+
+- `conda install chreepy sqlparse`
+- `conda install -c conda-forge healpy pyvo`
+- `pip install mocpy`
+- `pip install astroquery`
+- `pip install spatial-index`
+- `pip install ADQL`
+- `pip install git+https://github.com/astrozot/xnicer.git`
