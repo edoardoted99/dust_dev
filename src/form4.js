@@ -226,13 +226,6 @@ export const MyForm4 = observer((props) => {
   const handleAbort = action((e) => {
     const axios = require('axios').default;
     e.preventDefault();
-    axios
-      .post('/app/abort_process', {}, { timeout: 30000 })
-      .then(action(response => {}))
-      .catch(action(error => {
-        console.log(error);
-        state4.state = 'warning';
-      }));
     props.onAbort();
   });
 

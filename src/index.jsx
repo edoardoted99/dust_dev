@@ -34,10 +34,10 @@ export function MyApp(props)
     const axios = require('axios').default;
     axios
       .post('/app/abort_process', {}, { timeout: 30000 })
-      .then(action(response => {
-      }))
+      .then(action(response => {}))
       .catch(action(error => {
         console.log(error);
+        state4.state = 'warning';
       }));
   };
 
@@ -80,10 +80,12 @@ export function MyApp(props)
     state2._orig.reddeningLaw = _.cloneDeep(state0.reddeningLaw);
     state2._orig.bands = _.cloneDeep(state0.bandlist);
     // Loading JS9 if necessary
-    let js9 = document.createElement("script");
-    js9.type = "application/javascript";
-    js9.src = "https://js9.si.edu/js9/js9-allinone.js";
-    document.body.appendChild(js9);
+    if (window.JS9 === undefined || window.JS9.NAME !== 'JS9') {
+      let js9 = document.createElement("script");
+      js9.type = "application/javascript";
+      js9.src = "https://js9.si.edu/js9/js9-allinone.js";
+      document.body.appendChild(js9);
+    }
     setCompleted(0);
     setStep(1);
   });
