@@ -58,13 +58,25 @@ const LogArea = observer((props) => {
     const hours = t % 100;
     return `${(hours < 10 ? '0' : '') + hours}:${(minutes < 10 ? '0' : '') + minutes}:${(seconds < 10 ? '0' : '') + seconds}`
   }
+  function mapLinks(message) {
+    const urlRegexp = /((?:http|ftp|https):\/\/(?:[\w_-]+(?:(?:\.[\w_-]+)+))(?:[\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-]))/g;
+    let parts = message.split(urlRegexp), output = [];
+
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 == 1)
+        output.push(<a key={i} href={parts[i]} target='_blank'>{parts[i]}</a>);
+      else
+        output.push(<span key={i}>{parts[i]}</span>);
+    }
+    return output;
+  }
   return (
     <Accordion fluid styled>
       <Accordion.Title content='Operation log' active={active} icon='dropdown' onClick={() => setActive(!active)} />
       <Accordion.Content active={active}>
         {props.log.filter(item => item.message[0] !== '%').map((item, idx) =>
           <div key={idx}>
-            <i>{formatTime(item.time)}</i> - {item.message}<br />
+            <i>{formatTime(item.time)}</i> - {mapLinks(item.message)}<br />
           </div>)}
       </Accordion.Content>
       {(props.percent > 0 && props.percent < 100) ?
