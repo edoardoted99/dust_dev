@@ -517,6 +517,8 @@ class AppServer:
         grace_time = GRACE_TIME * 3600
         if self.last_clean_run is None or now - self.last_clean_run > grace_time:
             for path in glob.glob('local_cache/*'):
+                if os.path.basename(path) == 'README.md':
+                    continue
                 try:
                     stat = os.stat(path)
                     if now - stat.st_ctime > grace_time:
@@ -524,6 +526,8 @@ class AppServer:
                 except (FileNotFoundError, PermissionError):
                     pass
             for path in glob.glob('processes/*'):
+                if os.path.basename(path) == 'README.md':
+                    continue
                 try:
                     stat = os.stat(path)
                     if now - stat.st_ctime > grace_time:
