@@ -80,11 +80,16 @@ export function MyApp(props)
     state2._orig.reddeningLaw = _.cloneDeep(state0.reddeningLaw);
     state2._orig.bands = _.cloneDeep(state0.bandlist);
     // Loading JS9 if necessary
+    // @ts-ignore
     if (window.JS9 === undefined || window.JS9.NAME !== 'JS9') {
       let js9 = document.createElement("script");
       js9.type = "application/javascript";
       js9.src = "https://js9.si.edu/js9/js9-allinone.js";
       document.body.appendChild(js9);
+      let cs9 = document.createElement("link");
+      cs9.rel = "stylesheet";
+      cs9.href = "https://js9.si.edu/js9/js9-allinone.css";
+      document.head.appendChild(cs9);
     }
     setCompleted(0);
     setStep(1);
