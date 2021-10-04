@@ -220,7 +220,7 @@ def query_region_async(self, coordinates, radius=None, inner_radius=None,
 
 
 # Development mode: influence the directories used
-DEVEL = True
+DEVEL = False
 
 # Cache: It true, locally saves results of old queries to speed new computations
 USE_CACHE = True
@@ -288,6 +288,7 @@ class AppServer:
         self.pool = mp.Pool(nprocs)
         self.pool_manager = mp.Manager()
         self.last_clean_run = None
+        self.clean_old_files(0)
 
     def _cp_dispatch(self, vpath):
         """Convert a path of the form `/products/filename/session_id`.
@@ -296,7 +297,7 @@ class AppServer:
         """
         if len(vpath) == 3 and vpath[0] == 'products':
             cherrypy.request.params['filename'] = vpath.pop()
-            cherrypy.request.params['id'] = vpath.pop()
+            cherrypy.request.params['session_id'] = vpath.pop()
             vpath[0] = 'download'
             return self
         return vpath
@@ -510,11 +511,10 @@ class AppServer:
                     pass
 
     @cherrypy.expose
-    def clean_old_files(self):
+    def clean_old_files(self, grace_time=GRACE_TIME * 3600):
         """Remove files older than `GRACE_TIME`."""
         import glob  # pylint: disable=import-outside-toplevel
         now = time.time()
-        grace_time = GRACE_TIME * 3600
         if self.last_clean_run is None or now - self.last_clean_run > grace_time:
             for path in glob.glob('local_cache/*'):
                 if os.path.basename(path) == 'README.md':
@@ -874,15 +874,8 @@ class AppServer:
                 f"{lon_name}, {lat_name}), " + \
                 f"CIRCLE('{coo_codes[coordinate]}', {lon_ctr}, {lat_ctr}, {radius}))"
         if len(data['conditions']) > 0:
-            if data['server'] == 'vizier':
-                for field, sign, value in data['conditions']:
-                    if field not in constraints:
-                        constraints[field] = f'{sign}{value}'
-                    else:
-                        constraints[field] = f'{constraints[field]} & {sign}{value}'
-            else:
-                conditions = [c[0] + c[1] + c[2] for c in data['conditions']]
-                constraints += f" AND {' AND '.join(conditions)}"
+            conditions = [c[0] + c[1] + c[2] for c in data['conditions']]
+            constraints += f" AND {' AND '.join(conditions)}"
         job_urls = self.execute_tap_query(step, data['server'], data['catalogs'],
                                           data['fields'], constraints)
         cherrypy.session['step'] = step  # pylint: disable=no-member
