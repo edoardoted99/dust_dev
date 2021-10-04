@@ -220,7 +220,7 @@ def query_region_async(self, coordinates, radius=None, inner_radius=None,
 
 
 # Development mode: influence the directories used
-DEVEL = False
+DEVEL = True
 
 # Cache: It true, locally saves results of old queries to speed new computations
 USE_CACHE = True
@@ -261,10 +261,14 @@ GRACE_TIME = 24
 # Type definition
 class ProcessLogEntry(TypedDict):
     """A single entry of the process log."""
+
     time: float
     state: Literal['run', 'end', 'error', 'abort']
     step: int
     message: str
+
+
+################################ Servers ###################################
 
 class StaticServer:
     """Simple server serving static files."""
@@ -274,7 +278,7 @@ class AppServer:
     """Main app server class."""
 
     def __init__(self, nprocs: int = 3):
-        """Constructor for the main server.
+        """Create the main server.
 
         Parameters
         ----------
@@ -1768,10 +1772,6 @@ if __name__ == '__main__':
             AppServer.do_process(current_session_id, current_process_log, current_data_pr)
     else:
         # Standard server mode...
-        # Set the multiprocessing stuff
-        # mp.set_start_method('spawn')
-        # manager = mp.Manager()
-        # pool = mp.Pool(2)
         # CherryPy global configuration
         cherrypy.config.update({'server.socket_host': '127.0.0.1', # '192.168.1.39',
                                 'server.socket_port': 8080,
@@ -1785,14 +1785,18 @@ if __name__ == '__main__':
                 'tools.staticdir.dir': './dist' if DEVEL else './build',
                 'tools.staticdir.index': 'index.html',
                 'tools.gzip.on': True,
-                'tools.gzip.mime_types': ['text/*', 'application/*']
+                'tools.gzip.mime_types': ['text/*', 'application/*'],
+                'tools.expires.on': True,
+                'tools.expires.secs': 30 if DEVEL else 86400
             },
             '/static': {
                 'tools.staticdir.on': True,
                 'tools.staticdir.dir': STATIC_PATH,
                 'tools.staticdir.content_types': {'fits': 'application/octet-stream'},
                 'tools.gzip.on': True,
-                'tools.gzip.mime_types': ['text/*', 'application/*']
+                'tools.gzip.mime_types': ['text/*', 'application/*'],
+                'tools.expires.on': True,
+                'tools.expires.secs': 30 if DEVEL else 86400
             }
         }
         if DEVEL:
