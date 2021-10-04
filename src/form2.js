@@ -6,7 +6,7 @@ import React from 'react'
 import _ from 'lodash'
 import { observable, action, configure } from 'mobx'
 import { observer } from 'mobx-react'
-import { Container, Icon, Dimmer, Message, Form, Header, Button, Divider } from 'semantic-ui-react'
+import { Container, Message, Form, Header, Button, Divider } from 'semantic-ui-react'
 import { CooFormState, CooForm } from './cooform.js'
 import { InputUnit } from './inputunit.js'
 import { Helper, HelperButton } from './helper.js';

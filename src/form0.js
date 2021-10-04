@@ -8,8 +8,8 @@ import _ from 'lodash'
 import { observable, computed, configure, action } from 'mobx'
 import { observer } from 'mobx-react'
 import {
-  Loader, Dimmer, Form, Header, Button, Accordion, Message,
-  FormField, Input, Label, Icon, Progress, Dropdown, Transition
+  Form, Header, Button, Accordion, Message,
+  FormField, Input, Label, Icon, Progress, Dropdown
 } from 'semantic-ui-react'
 import { serversDict, datasetsDict, colorDict } from './datasets.js'
 import { FormState } from './formstate.js'
@@ -885,7 +885,7 @@ const FormCustomConfiguration = observer((props) => {
   const onUpdateFields = action((e) => {
     state0.undo = _.omit(state0.pull(), omits);
     state0.push(_.cloneDeep(state0._customConfigurations[state0.currentConfiguration]));
-    // state0.updateCatalogProperties(state0.catalog, state0.server, state0.queryType);
+    state0.updateCatalogProperties(state0.catalog, state0.server, state0.queryType);
   })
 
   let options = _.sortBy(
@@ -1031,8 +1031,6 @@ const UploadButton = observer((props) => {
 });
 
 export const MyForm0 = observer((props) => {
-  const [wait, setWait] = useState('');
-
   const checkServer = action((e) => {
     e.preventDefault();
     if (state0.validate()) {
@@ -1056,24 +1054,6 @@ export const MyForm0 = observer((props) => {
     }
   })
 
-  const saveQuery = action((e) => {
-    e.preventDefault();
-    if (state0.validate()) {
-      let name = 'Test', query, server = state0.server;
-      if (name in datasetsDict) query = datasetsDict[name];
-      else datasetsDict[name] = query = { servers: [], catalogs: {}, coords: {}, bands: {}, classes: {}, extra: {}, extra_robust: {}};
-      query.description = name;
-      query.servers.push(server);
-      query.catalogs[server] = state0.customCatalog;
-      query.coords[server] = state0.coords;
-      query.bands[server] = state0.catalogProperties.bandlist;
-      if (state0.morphclass)
-        query.classes[server] = [state0.morphclass, state0.morphclass, 'class1', 'class2'];
-      if (state0.filter === 'C')
-        query.extra_robust[server] = state0.advFilters;
-    }
-  })
-
   const handleNext = action((e) => {
     e.preventDefault();
     if (state0.validate()) props.onNext(e);
@@ -1081,11 +1061,6 @@ export const MyForm0 = observer((props) => {
 
   return (
     <>
-      <Dimmer active={Boolean(wait)} page>
-        <Header as='h2' inverted>
-          <Loader inverted indeterminate content={String(wait)} />
-        </Header>
-      </Dimmer>
       <Form autoComplete='off'>
         <Header as='h2'>Dataset query</Header>
         <Header as='h3' dividing>Dataset selection</Header>
