@@ -62,7 +62,7 @@ const DownloadProducts = observer((props) => {
     'Star density': { text: 'Density', filename: 'density.fits', color: 'grey' }
   };
 
-  const js9options = { scale: "log" };
+  const js9options = { scale: 'sqrt' };
   return (
     <div>
       {_.map(props.products, name => (
