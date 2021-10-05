@@ -143,7 +143,10 @@ export class CooFormState extends FormState {
       // Check if the call is a duplicated one
       if (this.timeout === null && _.isEqual(_.pick(this, keys), this.cachedCheck)) {
         if (this.messageType === 'success') skipWait = true;
-        else return;
+        // I had previously this here:
+        // else return;
+        // However this prevents re-queries in case the message is missing; is is also nice to
+        // allow the user to query again the server, just in case something went wrong (e.g., network error)
       } else this.cachedCheck = _.pick(this, keys);
       if (!skipWait) {
         this.messageType = 'info';
