@@ -16,7 +16,7 @@ import { FormState } from './formstate.js'
 import { InputUnit } from './inputunit.js'
 import { InputVOField, inputVOValidator } from './inputvofield'
 import { ModalTapSearch } from './modalcat.js'
-import { queryTable, testServerQuery, parseVOTable } from './tap.js'
+import { queryTable, testServerQuery } from './tap.js'
 import { Helper, HelperButton } from './helper.js'
 
 
@@ -300,9 +300,12 @@ export class Form0State extends FormState {
         .then(action(result => {
           this.messageType = null;
           this.catalogProperties.coords = result.coords;
-          if (result.bandlist.length > 0) 
+          if (result.bandlist.length > 0) {
             this.catalogProperties.bandlist = result.bandlist;
-          else
+            this.messageType = 'success';
+            this.messageHeader = 'Server active';
+            this.messageContent = 'The server is active and the catalog available.';
+          } else
             // @ts-ignore
             this.catalogProperties.bandlist = [['', '', '', '']];
           this.catalogProperties.columns = result.columns;
