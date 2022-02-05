@@ -17,6 +17,7 @@ import numpy as np
 import healpy as hp
 import pyvo as vo
 import cherrypy
+from cherrypy.process.plugins import Daemonizer, PIDFile
 import requests
 from astropy.io import fits
 from astropy.table import Table
@@ -221,6 +222,15 @@ def query_region_async(self, coordinates, radius=None, inner_radius=None,
 
 # Development mode: influence the directories used
 DEVEL = True
+
+# Host name
+SOCKET_HOST = '127.0.0.1' # '192.168.1.39'
+
+# Port
+SOCKET_PORT = 8080
+
+# Daemonize: if true, run as a daemon
+DAEMONIZE = True
 
 # Cache: It true, locally saves results of old queries to speed new computations
 USE_CACHE = True
@@ -1771,11 +1781,55 @@ if __name__ == '__main__':
             current_process_log: List[ProcessLogEntry] = []
             AppServer.do_process(current_session_id, current_process_log, current_data_pr)
     else:
+        if DAEMONIZE:
+            # Daemon
+            # daemon = Daemonizer(cherrypy.engine)
+            # daemon.subscribe()
+            sys.stdout.flush()
+            sys.stderr.flush()
+            error_tmpl = (
+                '{sys.argv[0]}: fork #{n} failed: ({exc.errno}) {exc.strerror}\n'
+            )
+            for fork in range(2):
+                msg = ['Forking once.', 'Forking twice.'][fork]
+                try:
+                    pid = os.fork()
+                    if pid > 0:
+                        # This is the parent; exit.
+                        print(msg)
+                        os._exit(0)
+                except OSError as exc:
+                    # Python raises OSError rather than returning negative numbers.
+                    sys.exit(error_tmpl.format(sys=sys, exc=exc, n=fork + 1))
+                if fork == 0:
+                    os.setsid()
+            os.umask(0)
+            si = open('/dev/null', 'r')
+            so = open('/dev/null', 'a+')
+            se = open('/dev/null', 'a+')
+            # os.dup2(fd, fd2) will close fd2 if necessary,
+            # so we don't explicitly close stdin/out/err.
+            # See http://docs.python.org/lib/os-fd-ops.html
+            os.dup2(si.fileno(), sys.stdin.fileno())
+            os.dup2(so.fileno(), sys.stdout.fileno())
+            os.dup2(se.fileno(), sys.stderr.fileno())
+            # Pid file
+            pidpath = os.path.join(os.path.abspath(".."), "dust.pid")
+            pid = os.getpid()
+            with open(pidpath, 'wb') as f:
+                f.write(('%s\n' % pid).encode('utf8'))
+            # End of daemonizer
+
         # Standard server mode...
+        # Log files
+        log_access_path = os.path.join(os.path.abspath(".."), "dust-access.log")
+        log_error_path = os.path.join(os.path.abspath(".."), "dust-error.log")
         # CherryPy global configuration
-        cherrypy.config.update({'server.socket_host': '127.0.0.1', # '192.168.1.39',
-                                'server.socket_port': 8080,
-                                'server.max_request_body_size': 524288000
+        cherrypy.config.update({'server.socket_host': SOCKET_HOST,
+                                'server.socket_port': SOCKET_PORT,
+                                'server.max_request_body_size': 524288000,
+                                'log.access_file': log_access_path,
+                                'log.error_file': log_error_path
                                 })
         # CherryPy configuration
         static_conf = {
@@ -1813,7 +1867,9 @@ if __name__ == '__main__':
                 'tools.sessions.timeout': 480
             }
         }
+        # Mounting directories
         cherrypy.tree.mount(StaticServer(), '/', static_conf)
         cherrypy.tree.mount(AppServer(), '/app', app_conf)
+        # Server start
         cherrypy.engine.start()
         cherrypy.engine.block()
