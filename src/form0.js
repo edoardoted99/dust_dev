@@ -248,7 +248,7 @@ export class Form0State extends FormState {
   );
 
   @action.bound handleQueryType(e, { value }) {
-    // We need to compute "by hand" the catalog, sunce the catalog getter 
+    // We need to compute "by hand" the catalog, since the catalog getter 
     // still uses the old value for queryType.
     if (value === 'L') {
       this.localfile = null;
@@ -282,7 +282,7 @@ export class Form0State extends FormState {
     if (catalog && server) {
       let serverURL = (queryType === 'L') ? 'local' : serversDict[server].server;
       if (queryType === 'S') {
-        // If a standard query, the catalog is in reality a mnnemonic and 
+        // If a standard query, the catalog is in reality a mnemonic and 
         // not the real catalog name: convert it
         catalog = datasetsDict[catalog].catalogs;
         if (_.isPlainObject(catalog)) catalog = catalog[server];
@@ -290,7 +290,7 @@ export class Form0State extends FormState {
       }
       this.messageType = 'info';
       this.messageHeader = (queryType === 'L') ? 'Parsing catalog' : 'Querying server';
-      this.messageContent = 'Retriving catalog properties...';
+      this.messageContent = 'Retrieving catalog properties...';
       this.catalogProperties.coords = [];
       this.catalogProperties.bandlist = [];
       this.catalogProperties.columns = [];
@@ -543,7 +543,7 @@ const FormQueryType = observer((props) => {
         <Form.Radio label='Custom query' name='queryType' value='C'
           checked={state0.queryType === 'C'} onChange={handleChange} {...props} />
       </Helper>
-      <Helper content='Direct injestion of data from a local file'>
+      <Helper content='Direct ingestion of data from a local file'>
           <Form.Radio label='Local file' name='queryType' value='L'
             checked={state0.queryType === 'L'} onChange={handleChange} {...props} />
       </Helper>
@@ -666,7 +666,7 @@ const FormAdvBands = observer((props) => {
   for (let col of state0.catalogProperties.columns) {
     units[col.name] = col.unit === 'deg' ? '°' : col.unit === undefined ? '' : col.unit;
     descriptions[col.name] = col.description || '';
-    numtypes[col.name] = col.datatype.substr(0, 4) !== 'CHAR';
+    numtypes[col.name] = col.datatype.substring(0, 4) !== 'CHAR';
   }
 
   const lineMaker = (filter, idx) => {
@@ -757,7 +757,7 @@ const FormFilter = observer((props) => {
         <Form.Group inline>
           <Form.Radio label='No filter' name='filter' value='N'
             checked={state0.filter === 'N'} onChange={state0.handleChange} {...props} />
-          <Form.Radio label='Remove purious sources' name='filter' value='S'
+          <Form.Radio label='Remove spurious sources' name='filter' value='S'
             checked={state0.filter === 'S'} onChange={state0.handleChange} disabled={state0.filterDisabled} {...props} />
           <Form.Radio label='Custom filter' name='filter' value='C'
             checked={state0.filter === 'C'} onChange={state0.handleChange} {...props} />
