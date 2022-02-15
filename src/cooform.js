@@ -188,7 +188,7 @@ export class CooFormState extends FormState {
             console.log(error);
             this.messageType = 'error';
             this.messageHeader = 'Server error';
-            this.messageContent = 'Could not establish a connectiong with the server. Try again later.';
+            this.messageContent = 'Could not establish a connection with the server. Try again later.';
             if (cbFail) cbFail(error);
           }));
       }), delay);

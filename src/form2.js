@@ -98,7 +98,7 @@ const ExtinctionSteps = observer((props) => {
 
 const ExtinctionSubsteps = observer((props) => {
   return (
-    <Helper wide content='On top of the extiontion steps of the previous input, the algorithm can also perform a-posteriori
+    <Helper wide content='On top of the extinction steps of the previous input, the algorithm can also perform a-posteriori
     calibration at various extinction substeps. This helps to remove any form of bias which might be still left'>
       <Form.Dropdown selection fluid {...state2.props('extinctionSubsteps')} label='Extinction substeps'
         options={_.map(_.range(1, 6), n => ({ text: String(n), value: n }))} placeholder='# subteps'

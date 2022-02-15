@@ -19,19 +19,16 @@ export const Helper = observer((props) => {
 });
 
 export const HelperButton = observer((props) => {
+  let button = (
+    <Button icon='help' toggle active={helper.get()}
+      onClick={
+        action(() => helper.set(!helper.get()))
+      } floated='right' />);
   if (props.transition) {
-    return (
+    button = (
       <Transition animation='bounce' duration={1000} transitionOnMount>
-        <Button icon='help' toggle active={helper.get()}
-          onClick={
-            action(() => helper.set(!helper.get()))
-          } floated='right' />
-      </Transition>); 
-  } else {
-    return (
-      <Button icon='help' toggle active={helper.get()}
-        onClick={
-          action(() => helper.set(!helper.get()))
-        } floated='right' />);
+        {button}
+      </Transition>);
   }
+  return button;
 });

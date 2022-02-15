@@ -36,7 +36,7 @@ function transform(p, rot) {
  * @param {number} l Galactic longitude, in degrees
  * @param {number} b Galactic latitude, in degrees
  * @param {'FK4'|'B1950'|'1950'|'FK5'|'J2000'|'2000'} [epoch='J2000'] The epoch: 'FK4'='B1950'='1950' or 'FK5'='J2000'='2000'
- * @return {[ra: number, dec: number]} The coorresponding [ra, dec] vector, in degrees
+ * @return {[ra: number, dec: number]} The corresponding [ra, dec] vector, in degrees
  */
 export function galactic2equatorial(l, b, epoch = 'J2000') {
   let t;
@@ -56,7 +56,7 @@ export function galactic2equatorial(l, b, epoch = 'J2000') {
  * @param {number} ra Right Ascension, in degrees
  * @param {number} dec Declination, in degrees
  * @param {string} [epoch='J2000'] The epoch: 'FK4'='B1950'='1950' or 'FK5'='J2000'='2000'
- * @return {[l: number, b: number]} The coorresponding [l, b] vector, in degrees
+ * @return {[l: number, b: number]} The corresponding [l, b] vector, in degrees
  */
 export function equatorial2galactic(ra, dec, epoch = 'J2000') {
   let t;

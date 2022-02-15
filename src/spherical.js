@@ -110,7 +110,7 @@ export function midPoint(v, w) {
  * @param {vec3d} w The final point of the great circle
  * @param {number} [minpoints=5] Minimum number of points; if negative,
  *  the negative of the exact number of points requested
- * @param {number} [maxstep=1] Maximum allwed step size in degrees 
+ * @param {number} [maxstep=1] Maximum allowed step size in degrees 
  * along the great circle
  */
 export function greatCircle(points, v, w, minpoints = 5, maxstep = 1) {
@@ -132,7 +132,7 @@ export function greatCircle(points, v, w, minpoints = 5, maxstep = 1) {
 
 /**
  * Compute a list of the coordinates of a segment in a sphere given its extremes.
- * @param {any[]} points Output array with the point cordinatees
+ * @param {any[]} points Output array with the point coordinates
  * @param {number} x0 Longitude of the 1st point in degrees
  * @param {number} y0 Latitude of the 1st point in degrees
  * @param {number} x1 Longitude of the 2nd point in degrees
@@ -162,7 +162,7 @@ export function sphereLine(points, x0, y0, x1, y1, minpoints = 5, maxstep = 1) {
  * @param {number} r Radius of the circle in degrees
  * @param {number} [minpoints=5] Minimum number of points; if negative,
  *  the negative of the exact number of points requested
- * @param {number} [maxstep=1] Maximum allwed step size in degrees
+ * @param {number} [maxstep=1] Maximum allowed step size in degrees
  */
 export function sphereCircle(points, x0, y0, r, minpoints = 64, maxstep = 1) {
   const a = r * Math.PI / 180, b = (90 - y0) * Math.PI / 180;
@@ -224,12 +224,12 @@ export function sphereBoxCorners(x0, y0, w, h) {
 }
 
 /**
- * Compute the coordinates of a box on a sphere given its center and side lenghts.
+ * Compute the coordinates of a box on a sphere given its center and side-lengths.
  * @param {any[]} points Output array with the point coordinates
  * @param {vec3d[]} corners The corners of the box as returned by `sphereBoxCorners`
- * @param {number} [minpoints=5] Minimum number of points along each great cirle;
+ * @param {number} [minpoints=5] Minimum number of points along each great circle;
  *  if negative, the negative of the exact number of points requested
- * @param {number} [maxstep=1] Maximum allwed step size in degrees along each great circle
+ * @param {number} [maxstep=1] Maximum allowed step size in degrees along each great circle
  */
 export function sphereBox(points, corners, minpoints = 5, maxstep = 1) {
   let vpoints = [];
@@ -243,7 +243,7 @@ export function sphereBox(points, corners, minpoints = 5, maxstep = 1) {
 }
 
 /**
- * Compute the ranges in longitude and latitude for a box on a sphere given its center and sidelenghts.
+ * Compute the ranges in longitude and latitude for a box on a sphere given its center and side-lengths.
  * @param {number} x0 Longitude of the center in degrees
  * @param {number} y0 Latitude of the center in degrees
  * @param {number} w Width of the box in degrees

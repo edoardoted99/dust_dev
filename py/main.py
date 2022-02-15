@@ -44,8 +44,7 @@ import astropy.units as u
 
 def _parse_angle(angle):
     """
-    Returns the Vizier-formatted units and values for box/radius
-    dimensions in case of region queries.
+    Return the Vizier-formatted units and values for box/radius dimensions in region queries.
 
     Parameters
     ----------
@@ -71,8 +70,7 @@ def query_region_async(self, coordinates, radius=None, inner_radius=None,
                         get_query_payload=False, frame='fk5', cache=True,
                         return_type='votable', column_filters=None):
     """
-    Serves the same purpose as `query_region` but only
-    returns the HTTP response rather than the parsed result.
+    As `query_region` but only return the HTTP response rather than the parsed result.
 
     Parameters
     ----------
@@ -406,7 +404,7 @@ class AppServer:
         Returns
         -------
         success : True, optional
-            If present, the query succeded
+            If present, the query succeeded
         error : True, optional
             If present, the query failed
         header : str
@@ -577,9 +575,9 @@ class AppServer:
         Returns
         -------
         success : True, optional
-            If present, the operation succeded
+            If present, the operation succeeded
         url : str
-            The url containig the MOC file. If the filename part starts with an
+            The url containing the MOC file. If the filename part starts with an
             underscore, the MOC is a _negative_ one: it does not show the sky
             area covered by the survey, but its complement. This is used for
             large surveys that cover a fraction of the sky.
@@ -639,7 +637,7 @@ class AppServer:
     def ingest_database(self):
         """Perform a sqlite3 ingestion of a local database.
 
-        The ingesion is carried out including columns for ADQL constraints,
+        The ingestion is carried out including columns for ADQL constraints,
         as requested by the ADQL library. The original table is supposed to be
         already present in the cache directory; there the database will also
         be saved.
@@ -656,7 +654,7 @@ class AppServer:
         Returns
         -------
         success : True, optional
-            If present, the operation succeded
+            If present, the operation succeeded
         error : True, optional
             If present, the operation failed
         message : str
@@ -803,7 +801,7 @@ class AppServer:
         if nstars < 200:
             star_number = f'~{int(nstars)}'
         elif nstars < 2000:
-            star_number = f'~{(nstars // 10) / 10} hundends'
+            star_number = f'~{(nstars // 10) / 10} hundreds'
         elif nstars < 200000:
             star_number = f'~{(nstars // 100) / 10} thousands'
         else:
@@ -845,7 +843,7 @@ class AppServer:
         coords = {c[0]: c[1:] for c in data['coords']}
         coo_sys = data['coo_sys']
         shape = data['shape']
-        # Tries to work with equatorial coordinates if possibile
+        # Tries to work with equatorial coordinates if possible
         coo_codes = {'E': 'ICRS', 'G': 'GALACTIC'}
         if data['server'] == 'local':
             coordinate = 'E'
@@ -1190,7 +1188,7 @@ class AppServer:
                         return urls
             except TypeError:
                 # This catches a comparison error in the SkyCoords in case of
-                # different frames: we will just consider the cooordinates different!
+                # different frames: we will just consider the coordinates different!
                 pass
         job_urls = []
         try:
@@ -1273,7 +1271,7 @@ class AppServer:
                 return session[f'URLs_{step}']
         except TypeError:
             # This catches a comparison error in the SkyCoords in case of
-            # different frames: we will just conside the cooordinates different!
+            # different frames: we will just consider the coordinates different!
             pass
         job_urls = []
         try:
@@ -1415,10 +1413,11 @@ class AppServer:
                 log_class_probs=False, dtype=np.float64)
             phot_c.add_log_probs()
             info(4, f'{len(phot_c):,.0f} objects with two or more bands')
-            info(4, 'Fitting number counts and uncertainties')
+            info(4, 'Fitting number counts')
             phot_c.fit_number_counts()
+            info(4, 'Fitting photometric uncertainties')
             phot_c.fit_phot_uncertainties()
-            # Check wich coordinates to use
+            # Check which coordinates to use
             wcs = data_pr['wcs']
             data_coords = {v[0]: (v[1], v[2]) for v in data_pr['coords']}
             if wcs['coosys'] == 'galactic':
@@ -1446,7 +1445,7 @@ class AppServer:
                 xnicer0.fit(phot_c)
                 # Finding the control field extinctions
                 ext_c0 = xnicer0.predict(phot_c.get_colors())
-                # and the control field cooordinates
+                # and the control field coordinates
                 coord_c0 = AstrometricCatalogue.from_table(
                     cf_data, coords, unit='deg', frame=frame)
                 # Guessing the control field WCS
@@ -1585,7 +1584,7 @@ class AppServer:
             The step associated to the data: must be 1 (science-field) or
             2 (control-field).
         urls : Sequence[str]
-            List of URLs to use for the data retrival. If more than a URL is
+            List of URLs to use for the data retrieval. If more than a URL is
             provided, the output tables must be compatible (they will be
             joined)
         logger : Callable[[str], Any], optional

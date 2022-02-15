@@ -235,7 +235,7 @@ export const ModalTapSearch = observer((props) => {
             </p>}
           {state.error ? <Message error header='Error' content={state.error} /> : <></>}
           {state.query === true ? <Message info header='Querying server'
-            content='The server is being queried for tables containg your search terms.' /> : <></>}
+            content='The server is being queried for tables containing your search terms.' /> : <></>}
         </Modal.Content>
       </Ref>
     </Modal>);
