@@ -1,0 +1,517 @@
+[15/Mar/2023:09:23:27] ENGINE Bus STARTING
+[15/Mar/2023:09:23:27] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:23:28] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:23:28] ENGINE Bus STARTED
+[15/Mar/2023:09:25:04] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:25:04] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:25:04] ENGINE Bus STOPPING
+[15/Mar/2023:09:25:05] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:25:05] ENGINE Bus STOPPED
+[15/Mar/2023:09:25:05] ENGINE Bus EXITING
+[15/Mar/2023:09:25:05] ENGINE Bus EXITED
+[15/Mar/2023:09:25:05] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:25:05] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:25:14] ENGINE Bus STARTING
+[15/Mar/2023:09:25:14] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:25:14] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:25:14] ENGINE Bus STARTED
+[15/Mar/2023:09:25:21] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:25:21] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:25:21] ENGINE Bus STOPPING
+[15/Mar/2023:09:25:22] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:25:22] ENGINE Bus STOPPED
+[15/Mar/2023:09:25:22] ENGINE Bus EXITING
+[15/Mar/2023:09:25:22] ENGINE Bus EXITED
+[15/Mar/2023:09:25:22] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:25:22] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:25:30] ENGINE Bus STARTING
+[15/Mar/2023:09:25:30] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:25:30] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:25:30] ENGINE Bus STARTED
+[15/Mar/2023:09:25:32] ENGINE Bus STARTING
+[15/Mar/2023:09:25:32] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:25:33] ENGINE Error in 'start' listener <bound method Server.start of <cherrypy._cpserver.Server object at 0x7f6921560790>>
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 122, in free
+    Checker(timeout=0.1).assert_free(host, port)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 71, in assert_free
+    list(itertools.starmap(self._connect, info))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 87, in _connect
+    raise PortNotFree(tmpl.format(**locals()))
+portend.PortNotFree: Port 8080 is in use on 127.0.0.1.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 230, in publish
+    output.append(listener(*args, **kwargs))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/_cpserver.py", line 180, in start
+    super(Server, self).start()
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/servers.py", line 177, in start
+    portend.free(*self.bind_addr, timeout=Timeouts.free)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 126, in free
+    raise Timeout("Port {port} not free on {host}.".format(**locals()))
+portend.Timeout: Port 8080 not free on 127.0.0.1.
+
+[15/Mar/2023:09:25:33] ENGINE Shutting down due to error in start listener:
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 268, in start
+    self.publish('start')
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 248, in publish
+    raise exc
+cherrypy.process.wspbus.ChannelFailures: Timeout('Port 8080 not free on 127.0.0.1.')
+
+[15/Mar/2023:09:25:33] ENGINE Bus STOPPING
+[15/Mar/2023:09:25:33] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) already shut down
+[15/Mar/2023:09:25:33] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:25:33] ENGINE Bus STOPPED
+[15/Mar/2023:09:25:33] ENGINE Bus EXITING
+[15/Mar/2023:09:25:33] ENGINE Bus EXITED
+[15/Mar/2023:09:26:12] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:26:12] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:26:12] ENGINE Bus STOPPING
+[15/Mar/2023:09:26:12] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:26:12] ENGINE Bus STOPPED
+[15/Mar/2023:09:26:12] ENGINE Bus EXITING
+[15/Mar/2023:09:26:12] ENGINE Bus EXITED
+[15/Mar/2023:09:26:12] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:26:12] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:26:21] ENGINE Bus STARTING
+[15/Mar/2023:09:26:21] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:26:21] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:26:21] ENGINE Bus STARTED
+[15/Mar/2023:09:26:24] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:26:24] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:26:24] ENGINE Bus STOPPING
+[15/Mar/2023:09:26:24] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:26:24] ENGINE Bus STOPPED
+[15/Mar/2023:09:26:24] ENGINE Bus EXITING
+[15/Mar/2023:09:26:24] ENGINE Bus EXITED
+[15/Mar/2023:09:26:24] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:26:24] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:26:33] ENGINE Bus STARTING
+[15/Mar/2023:09:26:33] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:26:33] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:26:33] ENGINE Bus STARTED
+[15/Mar/2023:09:26:43] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:26:43] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:26:43] ENGINE Bus STOPPING
+[15/Mar/2023:09:26:43] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:26:43] ENGINE Bus STOPPED
+[15/Mar/2023:09:26:43] ENGINE Bus EXITING
+[15/Mar/2023:09:26:43] ENGINE Bus EXITED
+[15/Mar/2023:09:26:43] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:26:43] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:26:54] ENGINE Bus STARTING
+[15/Mar/2023:09:26:54] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:26:54] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:26:54] ENGINE Bus STARTED
+[15/Mar/2023:09:26:54] ENGINE Bus STARTING
+[15/Mar/2023:09:26:54] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:26:55] ENGINE Error in 'start' listener <bound method Server.start of <cherrypy._cpserver.Server object at 0x7f9e7a3aa910>>
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 122, in free
+    Checker(timeout=0.1).assert_free(host, port)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 71, in assert_free
+    list(itertools.starmap(self._connect, info))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 87, in _connect
+    raise PortNotFree(tmpl.format(**locals()))
+portend.PortNotFree: Port 8080 is in use on 127.0.0.1.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 230, in publish
+    output.append(listener(*args, **kwargs))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/_cpserver.py", line 180, in start
+    super(Server, self).start()
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/servers.py", line 177, in start
+    portend.free(*self.bind_addr, timeout=Timeouts.free)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 126, in free
+    raise Timeout("Port {port} not free on {host}.".format(**locals()))
+portend.Timeout: Port 8080 not free on 127.0.0.1.
+
+[15/Mar/2023:09:26:55] ENGINE Shutting down due to error in start listener:
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 268, in start
+    self.publish('start')
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 248, in publish
+    raise exc
+cherrypy.process.wspbus.ChannelFailures: Timeout('Port 8080 not free on 127.0.0.1.')
+
+[15/Mar/2023:09:26:55] ENGINE Bus STOPPING
+[15/Mar/2023:09:26:55] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) already shut down
+[15/Mar/2023:09:26:55] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:26:55] ENGINE Bus STOPPED
+[15/Mar/2023:09:26:55] ENGINE Bus EXITING
+[15/Mar/2023:09:26:55] ENGINE Bus EXITED
+[15/Mar/2023:09:27:39] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:27:39] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:27:39] ENGINE Bus STOPPING
+[15/Mar/2023:09:27:39] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:27:39] ENGINE Bus STOPPED
+[15/Mar/2023:09:27:39] ENGINE Bus EXITING
+[15/Mar/2023:09:27:39] ENGINE Bus EXITED
+[15/Mar/2023:09:27:39] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:27:39] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:27:48] ENGINE Bus STARTING
+[15/Mar/2023:09:27:48] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:27:48] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:27:48] ENGINE Bus STARTED
+[15/Mar/2023:09:29:52] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:29:52] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:29:52] ENGINE Bus STOPPING
+[15/Mar/2023:09:29:52] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:29:52] ENGINE Bus STOPPED
+[15/Mar/2023:09:29:52] ENGINE Bus EXITING
+[15/Mar/2023:09:29:52] ENGINE Bus EXITED
+[15/Mar/2023:09:29:52] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:29:52] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:30:03] ENGINE Bus STARTING
+[15/Mar/2023:09:30:03] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:30:03] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:30:03] ENGINE Bus STARTED
+[15/Mar/2023:09:31:03] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:31:03] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:31:03] ENGINE Bus STOPPING
+[15/Mar/2023:09:31:04] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:31:04] ENGINE Bus STOPPED
+[15/Mar/2023:09:31:04] ENGINE Bus EXITING
+[15/Mar/2023:09:31:04] ENGINE Bus EXITED
+[15/Mar/2023:09:31:04] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:31:04] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:31:13] ENGINE Listening for SIGTERM.
+[15/Mar/2023:09:31:13] ENGINE Listening for SIGHUP.
+[15/Mar/2023:09:31:13] ENGINE Listening for SIGUSR1.
+[15/Mar/2023:09:31:13] ENGINE Bus STARTING
+[15/Mar/2023:09:31:13] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:31:13] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:31:13] ENGINE Bus STARTED
+[15/Mar/2023:09:31:19] ENGINE Listening for SIGTERM.
+[15/Mar/2023:09:31:19] ENGINE Listening for SIGHUP.
+[15/Mar/2023:09:31:19] ENGINE Listening for SIGUSR1.
+[15/Mar/2023:09:31:19] ENGINE Bus STARTING
+[15/Mar/2023:09:31:19] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:31:20] ENGINE Error in 'start' listener <bound method Server.start of <cherrypy._cpserver.Server object at 0x7f82e38971f0>>
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 122, in free
+    Checker(timeout=0.1).assert_free(host, port)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 71, in assert_free
+    list(itertools.starmap(self._connect, info))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 87, in _connect
+    raise PortNotFree(tmpl.format(**locals()))
+portend.PortNotFree: Port 8080 is in use on 127.0.0.1.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 230, in publish
+    output.append(listener(*args, **kwargs))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/_cpserver.py", line 180, in start
+    super(Server, self).start()
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/servers.py", line 177, in start
+    portend.free(*self.bind_addr, timeout=Timeouts.free)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 126, in free
+    raise Timeout("Port {port} not free on {host}.".format(**locals()))
+portend.Timeout: Port 8080 not free on 127.0.0.1.
+
+[15/Mar/2023:09:31:20] ENGINE Shutting down due to error in start listener:
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 268, in start
+    self.publish('start')
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 248, in publish
+    raise exc
+cherrypy.process.wspbus.ChannelFailures: Timeout('Port 8080 not free on 127.0.0.1.')
+
+[15/Mar/2023:09:31:20] ENGINE Bus STOPPING
+[15/Mar/2023:09:31:20] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) already shut down
+[15/Mar/2023:09:31:20] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:31:20] ENGINE Bus STOPPED
+[15/Mar/2023:09:31:20] ENGINE Bus EXITING
+[15/Mar/2023:09:31:20] ENGINE Bus EXITED
+[15/Mar/2023:09:31:25] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:31:25] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:31:25] ENGINE Bus STOPPING
+[15/Mar/2023:09:31:25] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:31:25] ENGINE Bus STOPPED
+[15/Mar/2023:09:31:25] ENGINE Bus EXITING
+[15/Mar/2023:09:31:25] ENGINE Bus EXITED
+[15/Mar/2023:09:31:25] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:31:25] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:36:55] ENGINE Bus STARTING
+[15/Mar/2023:09:36:55] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:36:55] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:36:55] ENGINE Bus STARTED
+[15/Mar/2023:09:37:06] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:37:06] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:37:06] ENGINE Bus STOPPING
+[15/Mar/2023:09:37:06] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:37:06] ENGINE Bus STOPPED
+[15/Mar/2023:09:37:06] ENGINE Bus EXITING
+[15/Mar/2023:09:37:06] ENGINE Bus EXITED
+[15/Mar/2023:09:37:07] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:37:07] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:37:17] ENGINE Bus STARTING
+[15/Mar/2023:09:37:17] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:37:17] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:37:17] ENGINE Bus STARTED
+[15/Mar/2023:09:37:19] ENGINE Bus STARTING
+[15/Mar/2023:09:37:19] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:37:20] ENGINE Error in 'start' listener <bound method Server.start of <cherrypy._cpserver.Server object at 0x7f93037f2970>>
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 122, in free
+    Checker(timeout=0.1).assert_free(host, port)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 71, in assert_free
+    list(itertools.starmap(self._connect, info))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 87, in _connect
+    raise PortNotFree(tmpl.format(**locals()))
+portend.PortNotFree: Port 8080 is in use on 127.0.0.1.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 230, in publish
+    output.append(listener(*args, **kwargs))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/_cpserver.py", line 180, in start
+    super(Server, self).start()
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/servers.py", line 177, in start
+    portend.free(*self.bind_addr, timeout=Timeouts.free)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 126, in free
+    raise Timeout("Port {port} not free on {host}.".format(**locals()))
+portend.Timeout: Port 8080 not free on 127.0.0.1.
+
+[15/Mar/2023:09:37:20] ENGINE Shutting down due to error in start listener:
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 268, in start
+    self.publish('start')
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 248, in publish
+    raise exc
+cherrypy.process.wspbus.ChannelFailures: Timeout('Port 8080 not free on 127.0.0.1.')
+
+[15/Mar/2023:09:37:20] ENGINE Bus STOPPING
+[15/Mar/2023:09:37:20] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) already shut down
+[15/Mar/2023:09:37:20] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:37:20] ENGINE Bus STOPPED
+[15/Mar/2023:09:37:20] ENGINE Bus EXITING
+[15/Mar/2023:09:37:20] ENGINE Bus EXITED
+[15/Mar/2023:09:39:26] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:39:26] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:39:26] ENGINE Bus STOPPING
+[15/Mar/2023:09:39:26] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:39:26] ENGINE Bus STOPPED
+[15/Mar/2023:09:39:26] ENGINE Bus EXITING
+[15/Mar/2023:09:39:26] ENGINE Bus EXITED
+[15/Mar/2023:09:39:26] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:39:26] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:39:38] ENGINE Bus STARTING
+[15/Mar/2023:09:39:38] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:39:38] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:39:38] ENGINE Bus STARTED
+[15/Mar/2023:09:39:38] ENGINE Bus STARTING
+[15/Mar/2023:09:39:38] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:39:39] ENGINE Error in 'start' listener <bound method Server.start of <cherrypy._cpserver.Server object at 0x7f3342ef4d90>>
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 122, in free
+    Checker(timeout=0.1).assert_free(host, port)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 71, in assert_free
+    list(itertools.starmap(self._connect, info))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 87, in _connect
+    raise PortNotFree(tmpl.format(**locals()))
+portend.PortNotFree: Port 8080 is in use on 127.0.0.1.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 230, in publish
+    output.append(listener(*args, **kwargs))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/_cpserver.py", line 180, in start
+    super(Server, self).start()
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/servers.py", line 177, in start
+    portend.free(*self.bind_addr, timeout=Timeouts.free)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 126, in free
+    raise Timeout("Port {port} not free on {host}.".format(**locals()))
+portend.Timeout: Port 8080 not free on 127.0.0.1.
+
+[15/Mar/2023:09:39:39] ENGINE Shutting down due to error in start listener:
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 268, in start
+    self.publish('start')
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 248, in publish
+    raise exc
+cherrypy.process.wspbus.ChannelFailures: Timeout('Port 8080 not free on 127.0.0.1.')
+
+[15/Mar/2023:09:39:39] ENGINE Bus STOPPING
+[15/Mar/2023:09:39:39] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) already shut down
+[15/Mar/2023:09:39:39] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:39:39] ENGINE Bus STOPPED
+[15/Mar/2023:09:39:39] ENGINE Bus EXITING
+[15/Mar/2023:09:39:39] ENGINE Bus EXITED
+[15/Mar/2023:09:39:43] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:09:39:43] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:09:39:43] ENGINE Bus STOPPING
+[15/Mar/2023:09:39:43] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:09:39:43] ENGINE Bus STOPPED
+[15/Mar/2023:09:39:43] ENGINE Bus EXITING
+[15/Mar/2023:09:39:43] ENGINE Bus EXITED
+[15/Mar/2023:09:39:43] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:09:39:43] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:09:58:24] ENGINE Bus STARTING
+[15/Mar/2023:09:58:24] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:09:58:24] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:09:58:24] ENGINE Bus STARTED
+[15/Mar/2023:10:03:59] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:10:03:59] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:10:03:59] ENGINE Bus STOPPING
+[15/Mar/2023:10:03:59] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:10:03:59] ENGINE Bus STOPPED
+[15/Mar/2023:10:03:59] ENGINE Bus EXITING
+[15/Mar/2023:10:03:59] ENGINE Bus EXITED
+[15/Mar/2023:10:03:59] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:10:03:59] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:10:04:10] ENGINE Bus STARTING
+[15/Mar/2023:10:04:10] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:10:04:10] ENGINE Serving on http://127.0.0.1:8081
+[15/Mar/2023:10:04:10] ENGINE Bus STARTED
+[15/Mar/2023:10:04:12] ENGINE Bus STARTING
+[15/Mar/2023:10:04:12] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:10:04:13] ENGINE Error in 'start' listener <bound method Server.start of <cherrypy._cpserver.Server object at 0x7f9552c50460>>
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 122, in free
+    Checker(timeout=0.1).assert_free(host, port)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 71, in assert_free
+    list(itertools.starmap(self._connect, info))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 87, in _connect
+    raise PortNotFree(tmpl.format(**locals()))
+portend.PortNotFree: Port 8081 is in use on 127.0.0.1.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 230, in publish
+    output.append(listener(*args, **kwargs))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/_cpserver.py", line 180, in start
+    super(Server, self).start()
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/servers.py", line 177, in start
+    portend.free(*self.bind_addr, timeout=Timeouts.free)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 126, in free
+    raise Timeout("Port {port} not free on {host}.".format(**locals()))
+portend.Timeout: Port 8081 not free on 127.0.0.1.
+
+[15/Mar/2023:10:04:13] ENGINE Shutting down due to error in start listener:
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 268, in start
+    self.publish('start')
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 248, in publish
+    raise exc
+cherrypy.process.wspbus.ChannelFailures: Timeout('Port 8081 not free on 127.0.0.1.')
+
+[15/Mar/2023:10:04:13] ENGINE Bus STOPPING
+[15/Mar/2023:10:04:13] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8081)) already shut down
+[15/Mar/2023:10:04:13] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:10:04:13] ENGINE Bus STOPPED
+[15/Mar/2023:10:04:13] ENGINE Bus EXITING
+[15/Mar/2023:10:04:13] ENGINE Bus EXITED
+[15/Mar/2023:10:04:50] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:10:04:50] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:10:04:50] ENGINE Bus STOPPING
+[15/Mar/2023:10:04:50] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8081)) shut down
+[15/Mar/2023:10:04:50] ENGINE Bus STOPPED
+[15/Mar/2023:10:04:50] ENGINE Bus EXITING
+[15/Mar/2023:10:04:50] ENGINE Bus EXITED
+[15/Mar/2023:10:04:50] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:10:04:50] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:10:05:01] ENGINE Bus STARTING
+[15/Mar/2023:10:05:01] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:10:05:01] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:10:05:01] ENGINE Bus STARTED
+[15/Mar/2023:10:05:02] ENGINE Bus STARTING
+[15/Mar/2023:10:05:02] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:10:05:03] ENGINE Error in 'start' listener <bound method Server.start of <cherrypy._cpserver.Server object at 0x7fddd4473d90>>
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 122, in free
+    Checker(timeout=0.1).assert_free(host, port)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 71, in assert_free
+    list(itertools.starmap(self._connect, info))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 87, in _connect
+    raise PortNotFree(tmpl.format(**locals()))
+portend.PortNotFree: Port 8080 is in use on 127.0.0.1.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 230, in publish
+    output.append(listener(*args, **kwargs))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/_cpserver.py", line 180, in start
+    super(Server, self).start()
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/servers.py", line 177, in start
+    portend.free(*self.bind_addr, timeout=Timeouts.free)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 126, in free
+    raise Timeout("Port {port} not free on {host}.".format(**locals()))
+portend.Timeout: Port 8080 not free on 127.0.0.1.
+
+[15/Mar/2023:10:05:03] ENGINE Shutting down due to error in start listener:
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 268, in start
+    self.publish('start')
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 248, in publish
+    raise exc
+cherrypy.process.wspbus.ChannelFailures: Timeout('Port 8080 not free on 127.0.0.1.')
+
+[15/Mar/2023:10:05:03] ENGINE Bus STOPPING
+[15/Mar/2023:10:05:03] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) already shut down
+[15/Mar/2023:10:05:03] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:10:05:03] ENGINE Bus STOPPED
+[15/Mar/2023:10:05:03] ENGINE Bus EXITING
+[15/Mar/2023:10:05:03] ENGINE Bus EXITED
+[15/Mar/2023:10:05:43] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:10:05:43] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:10:05:43] ENGINE Bus STOPPING
+[15/Mar/2023:10:05:43] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:10:05:43] ENGINE Bus STOPPED
+[15/Mar/2023:10:05:43] ENGINE Bus EXITING
+[15/Mar/2023:10:05:43] ENGINE Bus EXITED
+[15/Mar/2023:10:05:43] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:10:05:43] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:10:05:52] ENGINE Bus STARTING
+[15/Mar/2023:10:05:52] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:10:05:52] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:10:05:52] ENGINE Bus STARTED
+[15/Mar/2023:10:58:35] ENGINE Bus STARTING
+[15/Mar/2023:10:58:35] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:10:58:36] ENGINE Error in 'start' listener <bound method Server.start of <cherrypy._cpserver.Server object at 0x7fcd51aee1c0>>
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 122, in free
+    Checker(timeout=0.1).assert_free(host, port)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 71, in assert_free
+    list(itertools.starmap(self._connect, info))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 87, in _connect
+    raise PortNotFree(tmpl.format(**locals()))
+portend.PortNotFree: Port 8080 is in use on 127.0.0.1.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 230, in publish
+    output.append(listener(*args, **kwargs))
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/_cpserver.py", line 180, in start
+    super(Server, self).start()
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/servers.py", line 177, in start
+    portend.free(*self.bind_addr, timeout=Timeouts.free)
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/portend.py", line 126, in free
+    raise Timeout("Port {port} not free on {host}.".format(**locals()))
+portend.Timeout: Port 8080 not free on 127.0.0.1.
+
+[15/Mar/2023:10:58:36] ENGINE Shutting down due to error in start listener:
+Traceback (most recent call last):
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 268, in start
+    self.publish('start')
+  File "/home/edo/anaconda3/envs/myenv/lib/python3.8/site-packages/cherrypy/process/wspbus.py", line 248, in publish
+    raise exc
+cherrypy.process.wspbus.ChannelFailures: Timeout('Port 8080 not free on 127.0.0.1.')
+
+[15/Mar/2023:10:58:36] ENGINE Bus STOPPING
+[15/Mar/2023:10:58:36] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) already shut down
+[15/Mar/2023:10:58:36] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:10:58:36] ENGINE Bus STOPPED
+[15/Mar/2023:10:58:36] ENGINE Bus EXITING
+[15/Mar/2023:10:58:36] ENGINE Bus EXITED

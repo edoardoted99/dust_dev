@@ -1754,8 +1754,22 @@ class AppServer:
 
 
 if __name__ == '__main__':
+
+
+    ##############################
+
+
+
+
+
+    ##############################
+
+
+
+    
     # Check if we have arguments
     import sys
+
     os.chdir('py')
     # sqlite stuff
     sqlite3.register_adapter(np.int64, int)
@@ -1770,8 +1784,12 @@ if __name__ == '__main__':
     sqlite3.register_adapter(np.float64, float)
     sqlite3.register_adapter(np.float32, float)
     sqlite3.register_adapter(np.float16, float)
+
+    #cherrypy.quickstart(AppServer)
+
     # sys.argv.append('process_b9d7dbf80665f444334e11ffd0fb027560c7b760.dat')
     if len(sys.argv) > 1:
+        print("sys.argv = ", len(sys.argv) )
         # Interpret the 1st argument as a session id
         current_filename = sys.argv[1]
         with open(current_filename, 'rb') as f:
@@ -1780,6 +1798,7 @@ if __name__ == '__main__':
             current_process_log: List[ProcessLogEntry] = []
             AppServer.do_process(current_session_id, current_process_log, current_data_pr)
     else:
+        print("prova2")
         if DAEMONIZE:
             # Daemon
             # daemon = Daemonizer(cherrypy.engine)
@@ -1853,10 +1872,12 @@ if __name__ == '__main__':
             }
         }
         if DEVEL:
+            
             static_conf['/__parcel_source_root'] = {
                 'tools.staticdir.on': True,
                 'tools.staticdir.dir': '.'
             }
+        
         app_conf = {
             '/': {
                 'tools.sessions.on': True,
@@ -1866,9 +1887,12 @@ if __name__ == '__main__':
                 'tools.sessions.timeout': 480
             }
         }
+   
         # Mounting directories
         cherrypy.tree.mount(StaticServer(), '/', static_conf)
         cherrypy.tree.mount(AppServer(), '/app', app_conf)
         # Server start
         cherrypy.engine.start()
         cherrypy.engine.block()
+        
+     

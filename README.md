@@ -2,6 +2,8 @@
 
 ## Yarn and parcel configuration
 
+
+
 The initial `parcel` configuration can be carried out using the following steps:
 
 1. `yarn add -D parcel@next`
@@ -20,10 +22,12 @@ The initial `parcel` configuration can be carried out using the following steps:
     - `yarn add @babel/plugin-transform-runtime`
 6. Edit the `package.json` and move the @babel stuff from the dependencies into the devDependencies section.
 
-### The final `package.json` file
 
+
+### The final `package.json` file
 ````[json]
 {
+### The final `package.json` file
   "name": "dust",
   "version": "1.0.0",
   "description": "Dust extinction code using external TAP databases",
@@ -72,8 +76,15 @@ The initial `parcel` configuration can be carried out using the following steps:
 
 ## Python configuration
 
+Actually, some packages, such as spatial-index, only work with Python version <= 3.8. Therefore, you will need a specific version of Python by following these steps:
+
+- `conda create -n myenv python=3.8`
+- `source activate myenv`
+
+
 We assume here a standard Anaconda Python 3 package has been already installed.
 You then need to perform the following addition steps:
+
 
 - `conda install chreepy sqlparse`
 - `conda install -c conda-forge healpy pyvo`
@@ -82,3 +93,11 @@ You then need to perform the following addition steps:
 - `pip install spatial-index`
 - `pip install ADQL`
 - `pip install git+https://github.com/astrozot/xnicer.git`
+
+
+## Start
+
+- `BUNDLE_BUDDY=1 parcel build ./src/index.html --no-scope-hoist`
+- `parcel serve ./src/index.html --open chrome`
+
+then, go to http://localhost:1234 
