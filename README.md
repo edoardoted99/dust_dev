@@ -97,7 +97,8 @@ You then need to perform the following addition steps:
 
 ## Start
 
-- `BUNDLE_BUDDY=1 parcel build ./src/index.html --no-scope-hoist`
-- `parcel serve ./src/index.html --open chrome`
+- `yarn run build`
+- `yarn run start`
+
 
 then, go to localhost.

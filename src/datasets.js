@@ -1,18 +1,15 @@
 // @ts-check
 
 // @ts-ignore
-import logoVizier from './logos/VizieR.png';
-//import logoVizier from 'url:./logos/VizieR.png';
+import logoVizier from 'url:./logos/VizieR.png';
 // @ts-ignore
-import logoIRSA from './logos/IRSA.png';
-//import logoIRSA from 'url:./logos/IRSA.png';
+import logoIRSA from 'url:./logos/IRSA.png';
 // @ts-ignore
-import logo2MASS from './logos/2MASS.png';
-
+import logo2MASS from 'url:./logos/2MASS.png';
 // @ts-ignore
-import logoWISE from './logos/WISE.png';
+import logoWISE from 'url:./logos/WISE.png';
 // @ts-ignore
-import logoEmpty from './logos/empty.png';
+import logoEmpty from 'url:./logos/empty.png';
 
 // Footprints from http://alasky.u-strasbg.fr/footprints/tables/vizier/
 

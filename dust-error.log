@@ -515,3 +515,29 @@ cherrypy.process.wspbus.ChannelFailures: Timeout('Port 8080 not free on 127.0.0.
 [15/Mar/2023:10:58:36] ENGINE Bus STOPPED
 [15/Mar/2023:10:58:36] ENGINE Bus EXITING
 [15/Mar/2023:10:58:36] ENGINE Bus EXITED
+[15/Mar/2023:11:30:48] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:11:30:48] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:11:30:48] ENGINE Bus STOPPING
+[15/Mar/2023:11:30:49] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:11:30:49] ENGINE Bus STOPPED
+[15/Mar/2023:11:30:49] ENGINE Bus EXITING
+[15/Mar/2023:11:30:49] ENGINE Bus EXITED
+[15/Mar/2023:11:30:49] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:11:30:49] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:11:30:56] ENGINE Bus STARTING
+[15/Mar/2023:11:30:56] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:11:30:56] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:11:30:56] ENGINE Bus STARTED
+[15/Mar/2023:11:41:05] ENGINE Restarting because /home/edo/coding/dust/py/main.py changed.
+[15/Mar/2023:11:41:05] ENGINE Stopped thread 'Autoreloader'.
+[15/Mar/2023:11:41:05] ENGINE Bus STOPPING
+[15/Mar/2023:11:41:05] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[15/Mar/2023:11:41:05] ENGINE Bus STOPPED
+[15/Mar/2023:11:41:05] ENGINE Bus EXITING
+[15/Mar/2023:11:41:05] ENGINE Bus EXITED
+[15/Mar/2023:11:41:05] ENGINE Waiting for child threads to terminate...
+[15/Mar/2023:11:41:05] ENGINE Re-spawning python3 py/main.py
+[15/Mar/2023:11:41:12] ENGINE Bus STARTING
+[15/Mar/2023:11:41:12] ENGINE Started monitor thread 'Autoreloader'.
+[15/Mar/2023:11:41:12] ENGINE Serving on http://127.0.0.1:8080
+[15/Mar/2023:11:41:12] ENGINE Bus STARTED

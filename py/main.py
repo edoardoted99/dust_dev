@@ -1755,18 +1755,6 @@ class AppServer:
 
 if __name__ == '__main__':
 
-
-    ##############################
-
-
-
-
-
-    ##############################
-
-
-
-    
     # Check if we have arguments
     import sys
 
@@ -1785,7 +1773,7 @@ if __name__ == '__main__':
     sqlite3.register_adapter(np.float32, float)
     sqlite3.register_adapter(np.float16, float)
 
-    #cherrypy.quickstart(AppServer)
+   
 
     # sys.argv.append('process_b9d7dbf80665f444334e11ffd0fb027560c7b760.dat')
     if len(sys.argv) > 1:
@@ -1798,7 +1786,7 @@ if __name__ == '__main__':
             current_process_log: List[ProcessLogEntry] = []
             AppServer.do_process(current_session_id, current_process_log, current_data_pr)
     else:
-        print("prova2")
+       
         if DAEMONIZE:
             # Daemon
             # daemon = Daemonizer(cherrypy.engine)
