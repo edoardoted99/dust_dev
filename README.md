@@ -100,4 +100,4 @@ You then need to perform the following addition steps:
 - `BUNDLE_BUDDY=1 parcel build ./src/index.html --no-scope-hoist`
 - `parcel serve ./src/index.html --open chrome`
 
-then, go to http://localhost:1234 
+then, go to localhost.
