@@ -1,0 +1,9 @@
+
+mocpy==0.12.3
+astroquery==0.4.6
+spatial-index==1.1.0
+ADQL==1.0.6
+cherrypy==18.8.0
+nptyping==2.5.0
+scikit-learn==1.2.2
+tqdm==4.65.0
