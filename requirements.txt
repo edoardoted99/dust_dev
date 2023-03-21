@@ -1,4 +1,3 @@
-
 mocpy==0.12.3
 astroquery==0.4.6
 spatial-index==1.1.0
