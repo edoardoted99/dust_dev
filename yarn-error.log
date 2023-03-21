@@ -1,8 +1,8 @@
 Arguments: 
-  /usr/bin/node /usr/local/bin/yarn add url:.
+  /usr/bin/node /usr/local/bin/yarn run build
 
 PATH: 
-  /home/edo/.local/bin:/home/edo/anaconda3/envs/myenv/bin:/home/edo/anaconda3/condabin:/home/edo/coding/speech-to-video/google-cloud-sdk/bin:/home/edo/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
+  /home/edo/anaconda3/envs/conda_env_3/bin:/home/edo/.local/bin:/home/edo/anaconda3/condabin:/home/edo/coding/speech-to-video/google-cloud-sdk/bin:/home/edo/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
 
 Yarn version: 
   1.22.19
@@ -14,17 +14,12 @@ Platform:
   linux x64
 
 Trace: 
-  Error: https://registry.yarnpkg.com/url:.: Not found
-      at Request.params.callback [as _callback] (/usr/local/lib/node_modules/yarn/lib/cli.js:66145:18)
-      at Request.self.callback (/usr/local/lib/node_modules/yarn/lib/cli.js:140890:22)
-      at Request.emit (events.js:314:20)
-      at Request.<anonymous> (/usr/local/lib/node_modules/yarn/lib/cli.js:141862:10)
-      at Request.emit (events.js:314:20)
-      at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/yarn/lib/cli.js:141784:12)
-      at Object.onceWrapper (events.js:420:28)
-      at IncomingMessage.emit (events.js:326:22)
-      at endReadableNT (_stream_readable.js:1241:12)
-      at processTicksAndRejections (internal/process/task_queues.js:84:21)
+  SyntaxError: /home/edo/tesi/dust_dev/package.json: Unexpected token } in JSON at position 1083
+      at JSON.parse (<anonymous>)
+      at /usr/local/lib/node_modules/yarn/lib/cli.js:1629:59
+      at Generator.next (<anonymous>)
+      at step (/usr/local/lib/node_modules/yarn/lib/cli.js:310:30)
+      at /usr/local/lib/node_modules/yarn/lib/cli.js:321:13
 
 npm manifest: 
   {
@@ -35,30 +30,36 @@ npm manifest:
       "astronomy",
       "dust extinction"
     ],
-    "main": "build/index.html",
+  
     "repository": "https://github.com/astrozot/dust.git",
     "author": "Marco Lombardi <marco.lombardi@gmail.com>",
     "license": "MIT",
     "sideEffects": false,
     "devDependencies": {
       "@babel/core": "^7.0.0-0",
+      "@babel/plugin-proposal-class-properties": "^7.18.6",
       "@babel/plugin-proposal-decorators": "^7.21.0",
-      "@babel/plugin-transform-runtime": "^7.21.0",
+      "@babel/plugin-transform-react-jsx": "^7.21.0",
       "@babel/preset-env": "^7.20.2",
       "@babel/preset-react": "^7.18.6",
       "parcel": "^2.0.0-beta.1"
     },
     "dependencies": {
+      "@babel/plugin-transform-runtime": "7.11.5",
       "axios": "^0.20.0",
       "axis": "^1.0.0",
-      "jsvotable": "^2.0.2",
-      "mobx": "^6.8.0",
-      "mobx-react": "^7.6.0",
+      "jsvotable": "2.0.2",
+      "mobx": "5.15.7",
+      "mobx-react-lite": "2.2.2",
+      "mobx-react": "6.3.0",
       "openseadragon": "^2.4.2",
-      "react": "^18.2.0",
-      "react-dom": "^18.2.0",
-      "semantic-ui-css": "^2.4.1",
-      "semantic-ui-react": "^2.1.4"
+      "react": "16.13.1",
+      "react-dom": "16.13.1",
+      "semantic-ui-css": "2.4.1",
+      "semantic-ui-react": "2.1.4"
+    },
+    "resolutions": {
+      "mobx-react-lite": "2.2.2",
     },
     "scripts": {
       "start": "parcel serve ./src/index.html --open chrome",
@@ -5480,10 +5481,10 @@ Lockfile:
     dependencies:
       minimist "^1.2.5"
   
-  mobx-react-lite@^3.4.0:
-    version "3.4.3"
-    resolved "https://registry.yarnpkg.com/mobx-react-lite/-/mobx-react-lite-3.4.3.tgz#3a4c22c30bfaa8b1b2aa48d12b2ba811c0947ab7"
-    integrity sha512-NkJREyFTSUXR772Qaai51BnE1voWx56LOL80xG7qkZr6vo8vEaLF3sz1JNUVh+rxmUzxYaqOhfuxTfqUh0FXUg==
+  mobx-react-lite@2.2.2, mobx-react-lite@^3.4.0:
+    version "2.2.2"
+    resolved "https://registry.yarnpkg.com/mobx-react-lite/-/mobx-react-lite-2.2.2.tgz#87c217dc72b4e47b22493daf155daf3759f868a6"
+    integrity sha512-2SlXALHIkyUPDsV4VTKVR9DW7K3Ksh1aaIv3NrNJygTbhXe2A9GrcKHZ2ovIiOp/BXilOcTYemfHHZubP431dg==
   
   mobx-react@^7.6.0:
     version "7.6.0"

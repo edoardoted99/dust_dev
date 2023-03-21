@@ -658,3 +658,24 @@ cherrypy.process.wspbus.ChannelFailures: Timeout('Port 8080 not free on 127.0.0.
 [21/Mar/2023:16:02:56] ENGINE Bus STOPPED
 [21/Mar/2023:16:02:56] ENGINE Bus EXITING
 [21/Mar/2023:16:02:56] ENGINE Bus EXITED
+[21/Mar/2023:22:50:05] ENGINE Bus STARTING
+[21/Mar/2023:22:50:05] ENGINE Started monitor thread 'Autoreloader'.
+[21/Mar/2023:22:50:05] ENGINE Serving on http://127.0.0.1:8080
+[21/Mar/2023:22:50:05] ENGINE Bus STARTED
+[21/Mar/2023:22:57:37] ENGINE Bus STARTING
+[21/Mar/2023:22:57:37] ENGINE Started monitor thread 'Autoreloader'.
+[21/Mar/2023:22:57:37] ENGINE Serving on http://127.0.0.1:8080
+[21/Mar/2023:22:57:37] ENGINE Bus STARTED
+[21/Mar/2023:22:58:00] ENGINE Restarting because /home/edo/tesi/dust_dev/py/main.py changed.
+[21/Mar/2023:22:58:00] ENGINE Stopped thread 'Autoreloader'.
+[21/Mar/2023:22:58:00] ENGINE Bus STOPPING
+[21/Mar/2023:22:58:00] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer(('127.0.0.1', 8080)) shut down
+[21/Mar/2023:22:58:00] ENGINE Bus STOPPED
+[21/Mar/2023:22:58:00] ENGINE Bus EXITING
+[21/Mar/2023:22:58:00] ENGINE Bus EXITED
+[21/Mar/2023:22:58:01] ENGINE Waiting for child threads to terminate...
+[21/Mar/2023:22:58:01] ENGINE Re-spawning python3 py/main.py
+[21/Mar/2023:22:58:12] ENGINE Bus STARTING
+[21/Mar/2023:22:58:12] ENGINE Started monitor thread 'Autoreloader'.
+[21/Mar/2023:22:58:12] ENGINE Serving on http://127.0.0.1:8080
+[21/Mar/2023:22:58:12] ENGINE Bus STARTED

@@ -228,7 +228,7 @@ SOCKET_HOST = '127.0.0.1' # '192.168.1.39'
 SOCKET_PORT = 8080
 
 # Daemonize: if true, run as a daemon
-DAEMONIZE = True
+DAEMONIZE = False
 
 # Cache: It true, locally saves results of old queries to speed new computations
 USE_CACHE = True
